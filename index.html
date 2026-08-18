@@ -1,0 +1,1161 @@
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Noto+Sans+KR:wght@400;500;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  #wt-root {
+    --paper: #EDF0F2;
+    --card: #FFFFFF;
+    --ink: #1C2331;
+    --ink-soft: #5B6472;
+    --ink-faint: #9AA2AC;
+    --pen: #2C5C86;
+    --pen-tint: #E3ECF3;
+    --red: #B03A32;
+    --red-tint: #F6E4E2;
+    --green: #2F6E4E;
+    --green-tint: #E2EFE7;
+    --amber: #A8720F;
+    --amber-tint: #F5E9D3;
+    --line: #D6DAE1;
+    font-family: 'Noto Sans KR', sans-serif;
+    color: var(--ink);
+    background: var(--paper);
+    border-radius: 16px;
+    padding: 28px;
+    box-sizing: border-box;
+  }
+  #wt-root * { box-sizing: border-box; }
+  #wt-root .disp { font-family: 'Space Grotesk', 'Noto Sans KR', sans-serif; }
+  #wt-root .mono { font-family: 'JetBrains Mono', monospace; }
+  #wt-root button {
+    font-family: 'Noto Sans KR', sans-serif;
+    cursor: pointer;
+    border: none;
+    background: none;
+  }
+  #wt-root input, #wt-root textarea, #wt-root select {
+    font-family: 'Noto Sans KR', sans-serif;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 13px;
+    background: #fff;
+    color: var(--ink);
+    width: 100%;
+  }
+  #wt-root input:focus, #wt-root textarea:focus, #wt-root select:focus {
+    outline: none;
+    border-color: var(--pen);
+  }
+  #wt-root .btn-primary {
+    background: var(--pen);
+    color: #fff;
+    padding: 9px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+  }
+  #wt-root .btn-primary:hover { background: #234a6c; }
+  #wt-root .btn-ghost {
+    color: var(--pen);
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    border: 1px solid var(--line);
+    background: #fff;
+  }
+  #wt-root .btn-ghost:hover { background: var(--pen-tint); }
+  #wt-root .btn-text {
+    color: var(--ink-soft);
+    font-size: 12px;
+    padding: 4px 6px;
+  }
+  #wt-root .btn-text:hover { color: var(--ink); }
+  #wt-root .btn-danger-text { color: var(--red); font-size: 12px; padding: 4px 6px; }
+  #wt-root .btn-danger-text:hover { color: #7d2822; }
+</style>
+
+<div id="wt-root"></div>
+
+<script>
+(function(){
+  const root = document.getElementById('wt-root');
+  const INDEX_KEY = 'wt-index-v2';
+  function studentKey(id){ return 'wt-student-v2-' + id; }
+
+  // ---- Supabase 설정: 아래 두 값을 자신의 Supabase 프로젝트 값으로 채워주세요 ----
+  // Project Settings -> API 에서 확인할 수 있어요.
+  const SUPABASE_URL = 'https://ypivyntsumkjytftjrxs.supabase.co';
+  const SUPABASE_ANON_KEY = 'sb_publishable_0B8yPfaon7VQMCA8Q-Jpig_3xkDP3-X';
+  const SUPABASE_TABLE = 'wt_storage';
+
+  // Claude.ai의 아티팩트 샌드박스는 외부 네트워크 요청을 내부적으로 우회시키는데,
+  // 이 과정에서 Headers 객체를 postMessage로 못 넘겨서 에러가 나는 경우가 있어요.
+  // 요청을 보내기 전에 headers를 항상 순수 객체(plain object)로 바꿔서 이 문제를 피합니다.
+  function sandboxSafeFetch(input, init){
+    init = init || {};
+    var normalized = {};
+    for (var k in init) { if (Object.prototype.hasOwnProperty.call(init, k)) normalized[k] = init[k]; }
+    if (init.headers) {
+      var plainHeaders = {};
+      if (typeof Headers !== 'undefined' && init.headers instanceof Headers) {
+        init.headers.forEach(function(value, key){ plainHeaders[key] = value; });
+      } else if (init.headers instanceof Map) {
+        init.headers.forEach(function(value, key){ plainHeaders[key] = value; });
+      } else if (Array.isArray(init.headers)) {
+        init.headers.forEach(function(pair){ plainHeaders[pair[0]] = pair[1]; });
+      } else {
+        plainHeaders = Object.assign({}, init.headers);
+      }
+      normalized.headers = plainHeaders;
+    }
+    return window.fetch(input, normalized);
+  }
+
+  let sbClient = null;
+  if (SUPABASE_URL && SUPABASE_ANON_KEY
+      && SUPABASE_URL.indexOf('YOUR_') !== 0 && SUPABASE_ANON_KEY.indexOf('YOUR_') !== 0
+      && typeof window.supabase !== 'undefined') {
+    try {
+      sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+        global: { fetch: sandboxSafeFetch }
+      });
+    }
+    catch(e) { sbClient = null; }
+  }
+
+  let sbLastRawError = null;
+
+  async function sbGet(key){
+    const { data, error } = await sbClient.from(SUPABASE_TABLE).select('value').eq('key', key).maybeSingle();
+    if (error) { sbLastRawError = error; throw error; }
+    if (!data) { throw new Error('not found'); }
+    return { key, value: data.value };
+  }
+  async function sbSet(key, value){
+    const { error } = await sbClient.from(SUPABASE_TABLE).upsert({ key, value, updated_at: new Date().toISOString() });
+    if (error) { sbLastRawError = error; throw error; }
+    return { key, value };
+  }
+  // ---- Supabase 설정 끝 ----
+
+  let index = [];
+  let studentData = null;
+  let mode = 'teacher';
+  let currentStudentId = null;
+  let ui = {
+    addStudentOpen: false,
+    addWeaknessOpen: false,
+    addProgressOpen: false,
+    checkinOpenFor: null,
+    checkinPrefillStatus: null,
+    endedExpanded: false,
+    editingWeaknessId: null,
+    editingCheckinKey: null,
+    editingProgressId: null,
+    editingStudentName: false,
+    confirmDelete: null,
+    solvedExpanded: false,
+    progressExpanded: false,
+    linkPanelOpen: false,
+    manualBaseUrl: null,
+    locked: false,
+    loaded: false,
+    loadFailed: false,
+    noStorageApi: false,
+    error: null
+  };
+
+  function uid(){ return 'id-' + Math.random().toString(36).slice(2,10) + Date.now().toString(36); }
+  function todayStr(){ return new Date().toISOString().slice(0,10); }
+  function fmtDate(d){
+    const dt = new Date(d + 'T00:00:00');
+    return (dt.getMonth()+1) + '/' + dt.getDate();
+  }
+  function daysBetween(a,b){
+    return Math.floor((new Date(b) - new Date(a)) / (1000*60*60*24));
+  }
+  function esc(s){
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  function parseHashStudent(){
+    const m = window.location.hash.match(/s=([^&]+)/);
+    return m ? decodeURIComponent(m[1]) : null;
+  }
+
+  function detectBaseUrl(){
+    const href = window.location.href;
+    if (href.indexOf('about:') !== 0) {
+      return href.split('#')[0];
+    }
+    if (document.referrer && document.referrer.indexOf('about:') !== 0) {
+      return document.referrer.split('#')[0];
+    }
+    return null;
+  }
+
+  function buildParentLink(studentId){
+    const base = ui.manualBaseUrl || detectBaseUrl();
+    if (!base) return null;
+    return base.split('#')[0] + '#s=' + encodeURIComponent(studentId);
+  }
+
+  function localStorageAvailable(){
+    try {
+      const t = '__wt_probe__';
+      window.localStorage.setItem(t, '1');
+      window.localStorage.removeItem(t);
+      return true;
+    } catch(e) { return false; }
+  }
+
+  const STORAGE_MODE = sbClient
+    ? 'supabase'
+    : ((typeof window.storage !== 'undefined' && window.storage)
+      ? 'cloud'
+      : (localStorageAvailable() ? 'local' : 'none'));
+  const LOCAL_PREFIX = 'wt-local::';
+
+  async function rawGet(key){
+    if (STORAGE_MODE === 'supabase') {
+      return await sbGet(key);
+    }
+    if (STORAGE_MODE === 'cloud') {
+      return await window.storage.get(key, true);
+    }
+    const raw = window.localStorage.getItem(LOCAL_PREFIX + key);
+    if (raw === null) { const err = new Error('not found'); throw err; }
+    return { key, value: raw, shared: false };
+  }
+  async function rawSet(key, value){
+    if (STORAGE_MODE === 'supabase') {
+      return await sbSet(key, value);
+    }
+    if (STORAGE_MODE === 'cloud') {
+      return await window.storage.set(key, value, true);
+    }
+    window.localStorage.setItem(LOCAL_PREFIX + key, value);
+    return { key, value, shared: false };
+  }
+  async function rawDelete(key){
+    if (STORAGE_MODE === 'supabase') {
+      const { error } = await sbClient.from(SUPABASE_TABLE).delete().eq('key', key);
+      if (error) throw error;
+      return true;
+    }
+    if (STORAGE_MODE === 'cloud') {
+      return await window.storage.delete(key, true);
+    }
+    window.localStorage.removeItem(LOCAL_PREFIX + key);
+    return true;
+  }
+
+  let lastErrorDetail = null;
+
+  function describeError(e){
+    if (!e) return 'unknown error';
+    const parts = [];
+    if (e.message) parts.push(e.message);
+    if (e.code) parts.push('code=' + e.code);
+    if (e.details) parts.push('details=' + e.details);
+    if (e.hint) parts.push('hint=' + e.hint);
+    return parts.length ? parts.join(' | ') : String(e);
+  }
+
+  async function loadIndex(){
+    try {
+      const res = await rawGet(INDEX_KEY);
+      index = res && res.value ? JSON.parse(res.value) : [];
+    } catch(e) { index = []; lastErrorDetail = describeError(e); }
+  }
+  async function saveIndex(){
+    try { await rawSet(INDEX_KEY, JSON.stringify(index)); }
+    catch(e){ lastErrorDetail = describeError(e); }
+  }
+  async function loadStudentData(id){
+    try {
+      const res = await rawGet(studentKey(id));
+      return res && res.value ? JSON.parse(res.value) : null;
+    } catch(e) { lastErrorDetail = describeError(e); return null; }
+  }
+  async function saveStudentData(id, obj){
+    try {
+      const result = await rawSet(studentKey(id), JSON.stringify(obj));
+      ui.error = result ? null : '저장에 실패했어요. 다시 시도해주세요.';
+    } catch(e) {
+      ui.error = '저장에 실패했어요. 다시 시도해주세요.';
+      lastErrorDetail = describeError(e);
+    }
+  }
+  async function persist(){
+    const id = currentStudentId;
+    const snapshot = studentData;
+    await saveStudentData(id, snapshot);
+    render();
+  }
+
+  async function selectStudent(id){
+    currentStudentId = id;
+    studentData = null;
+    ui.loadFailed = false;
+    render();
+    const sd = await loadStudentData(id);
+    if (currentStudentId !== id) return;
+    if (sd) {
+      studentData = sd;
+    } else {
+      ui.loadFailed = true;
+    }
+    ui.solvedExpanded = false;
+    ui.progressExpanded = false;
+    ui.editingWeaknessId = null;
+    ui.editingCheckinKey = null;
+    ui.editingProgressId = null;
+    ui.editingStudentName = false;
+    ui.confirmDelete = null;
+    ui.checkinOpenFor = null;
+    ui.checkinPrefillStatus = null;
+    render();
+  }
+
+  async function load(){
+    if (STORAGE_MODE === 'none') {
+      ui.noStorageApi = true;
+      ui.loaded = true;
+      render();
+      return;
+    }
+    const hashStudent = parseHashStudent();
+    if (hashStudent) {
+      ui.locked = true;
+      mode = 'parent';
+      currentStudentId = hashStudent;
+      studentData = await loadStudentData(hashStudent);
+    } else {
+      await loadIndex();
+      if (index.length) {
+        const preferred = index.find(s => s.active !== false) || index[0];
+        currentStudentId = preferred.id;
+        const sd = await loadStudentData(currentStudentId);
+        if (sd) { studentData = sd; } else { ui.loadFailed = true; }
+      }
+    }
+    ui.loaded = true;
+    render();
+  }
+
+  function isActive(id){
+    const s = index.find(x => x.id === id);
+    return !s || s.active !== false;
+  }
+
+  async function exportData(){
+    const bundle = { version: 1, exportedAt: new Date().toISOString(), index: index, students: {} };
+    for (const s of index) {
+      const sd = await loadStudentData(s.id);
+      if (sd) bundle.students[s.id] = sd;
+    }
+    const blob = new Blob([JSON.stringify(bundle, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'weakness-tracker-backup-' + todayStr() + '.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  async function handleImportFile(file){
+    try {
+      const text = await file.text();
+      const bundle = JSON.parse(text);
+      if (!bundle || !Array.isArray(bundle.index)) throw new Error('invalid backup file');
+      index = bundle.index;
+      await saveIndex();
+      const ids = Object.keys(bundle.students || {});
+      for (const sid of ids) {
+        await rawSet(studentKey(sid), JSON.stringify(bundle.students[sid]));
+      }
+      ui.error = null;
+      if (index.length) {
+        await selectStudent(index[0].id);
+      } else {
+        studentData = null;
+        render();
+      }
+    } catch(e) {
+      ui.error = '가져오기에 실패했어요. 이 앱에서 내보낸 백업 파일이 맞는지 확인해주세요.';
+      lastErrorDetail = describeError(e);
+      render();
+    }
+  }
+
+  function currentStatus(w){
+    if (!w.checkins || !w.checkins.length) return '진행중';
+    const sorted = w.checkins.slice().sort((a,b)=> a.date.localeCompare(b.date));
+    return sorted[sorted.length-1].status;
+  }
+  function lastUpdate(w){
+    if (!w.checkins || !w.checkins.length) return w.createdAt;
+    const sorted = w.checkins.slice().sort((a,b)=> a.date.localeCompare(b.date));
+    return sorted[sorted.length-1].date;
+  }
+
+  function statusBadge(status, size){
+    const map = {
+      '진행중': {bg:'var(--red-tint)', fg:'var(--red)', label:'진행중'},
+      '해결': {bg:'var(--green-tint)', fg:'var(--green)', label:'해결'},
+      '재발': {bg:'var(--amber-tint)', fg:'var(--amber)', label:'재발'}
+    };
+    const s = map[status] || map['진행중'];
+    const big = size === 'lg';
+    if (status === '해결' && big) {
+      return `<span class="disp" style="display:inline-block; padding:3px 16px; border:2px solid ${s.fg}; border-radius:999px; transform:rotate(-3deg); font-size:13px; font-weight:600; color:${s.fg}; line-height:1.4;">해결</span>`;
+    }
+    return `<span class="mono" style="display:inline-block; padding:${big?'5px 12px':'3px 9px'}; border-radius:5px; background:${s.bg}; color:${s.fg}; font-size:${big?'12px':'11px'}; font-weight:600; letter-spacing:0.02em;">${s.label}</span>`;
+  }
+
+  function monthSummary(sd){
+    const now = new Date();
+    const thisMonth = now.toISOString().slice(0,7);
+    let solvedThisMonth = [];
+    let open = [];
+    (sd.weaknesses || []).forEach(w => {
+      const st = currentStatus(w);
+      const lu = lastUpdate(w);
+      if (st === '해결' && lu.slice(0,7) === thisMonth) solvedThisMonth.push(w);
+      if (st !== '해결') open.push(w);
+    });
+    let stalest = null;
+    open.forEach(w => {
+      const days = daysBetween(lastUpdate(w), todayStr());
+      if (!stalest || days > stalest.days) stalest = { w, days };
+    });
+    return { solvedThisMonth, open, stalest };
+  }
+
+  function renderStudentTabs(){
+    if (ui.locked) return '';
+    const tabBtn = (s, dim) => {
+      const active = s.id === currentStudentId;
+      return `<button data-action="select-student" data-id="${s.id}" style="
+        padding:8px 16px; border-radius:20px; font-size:13px; font-weight:500;
+        background:${active ? 'var(--ink)' : '#fff'}; color:${active ? '#fff' : 'var(--ink-soft)'};
+        border:1px solid ${active ? 'var(--ink)' : 'var(--line)'}; white-space:nowrap; ${dim ? 'opacity:0.6;' : ''}">${esc(s.name)}</button>`;
+    };
+    const activeList = index.filter(s => s.active !== false);
+    const endedList = index.filter(s => s.active === false);
+    const addBtn = mode === 'teacher'
+      ? `<button data-action="toggle-add-student" style="padding:8px 14px; border-radius:20px; font-size:13px; color:var(--pen); border:1px dashed var(--pen-tint); background:#fff; white-space:nowrap;">+ 학생 추가</button>`
+      : '';
+    let html = `<div style="display:flex; gap:8px; overflow-x:auto; padding-bottom:4px;">${activeList.map(s => tabBtn(s, false)).join('')}${addBtn}</div>`;
+    if (endedList.length) {
+      html += `<button data-action="toggle-ended" style="margin-top:8px; font-size:12px; color:var(--ink-soft); display:flex; align-items:center; gap:6px;">
+        수업 종료 학생 ${endedList.length}명 ${ui.endedExpanded ? '접기 ▲' : '보기 ▼'}
+      </button>`;
+      if (ui.endedExpanded) {
+        html += `<div style="display:flex; gap:8px; overflow-x:auto; padding:8px 0 0;">${endedList.map(s => tabBtn(s, true)).join('')}</div>`;
+      }
+    }
+    return html;
+  }
+
+  function renderAddStudentForm(){
+    if (!ui.addStudentOpen) return '';
+    return `<div style="margin-top:12px; padding:14px; background:#fff; border:1px solid var(--line); border-radius:10px; display:flex; gap:8px; align-items:center;">
+      <input id="wt-new-student-name" placeholder="학생 이름" style="flex:1;" />
+      <button class="btn-primary" data-action="add-student">추가</button>
+      <button class="btn-text" data-action="toggle-add-student">취소</button>
+    </div>`;
+  }
+
+  function renderModeToggle(){
+    if (ui.locked) return '';
+    return `<div style="display:inline-flex; background:#fff; border:1px solid var(--line); border-radius:20px; padding:3px;">
+      <button data-action="set-mode" data-mode="teacher" style="padding:6px 14px; border-radius:16px; font-size:12px; font-weight:500;
+        background:${mode==='teacher' ? 'var(--pen)' : 'transparent'}; color:${mode==='teacher' ? '#fff' : 'var(--ink-soft)'};">선생님 보기</button>
+      <button data-action="set-mode" data-mode="parent" style="padding:6px 14px; border-radius:16px; font-size:12px; font-weight:500;
+        background:${mode==='parent' ? 'var(--pen)' : 'transparent'}; color:${mode==='parent' ? '#fff' : 'var(--ink-soft)'};">학부모 보기</button>
+    </div>`;
+  }
+
+  function renderLinkPanel(studentId, studentName){
+    if (!ui.linkPanelOpen) return '';
+    const base = ui.manualBaseUrl || detectBaseUrl();
+
+    if (!base) {
+      return `<div style="margin-top:12px; padding:14px; background:#fff; border:1px solid var(--red-tint); border-radius:10px;">
+        <div style="font-size:12.5px; color:var(--red); font-weight:500; margin-bottom:8px;">이 화면의 실제 주소를 자동으로 알아낼 수 없었어요.</div>
+        <div style="font-size:12px; color:var(--ink-soft); line-height:1.7; margin-bottom:12px;">
+          로컬 파일이거나, 아직 게시되지 않은 미리보기 화면일 수 있어요. 게시하지 않으셨다면 먼저 Claude.ai에서 이 아티팩트를 "게시(Publish)"하거나, 무료 정적 호스팅(Netlify Drop 등)에 올려주세요.<br><br>
+          이미 게시하셨는데 이 메시지가 뜬다면, 지금 브라우저 주소창에 보이는 진짜 주소를 아래에 직접 붙여넣어 주세요.
+        </div>
+        <div style="display:flex; gap:8px;">
+          <input id="wt-manual-base-url" placeholder="https://claude.ai/public/artifacts/..." style="flex:1;" />
+          <button class="btn-primary" data-action="set-manual-base-url">적용</button>
+        </div>
+      </div>`;
+    }
+
+    const link = buildParentLink(studentId);
+    const localWarning = STORAGE_MODE === 'local'
+      ? `<div style="font-size:12px; color:var(--amber); margin-bottom:8px; padding:8px 10px; background:var(--amber-tint); border-radius:6px;">지금은 이 파일이 이 컴퓨터의 브라우저 안에만 저장돼 있어요. 이 링크는 다른 사람 기기에서 열면 기록이 보이지 않아요. 학부모께 실제로 보여드리려면 아래 "데이터 내보내기"로 백업 파일을 만들어 함께 전달해주세요.</div>`
+      : '';
+    return `<div style="margin-top:12px; padding:14px; background:#fff; border:1px solid var(--line); border-radius:10px;">
+      ${localWarning}
+      <div style="font-size:12px; color:var(--ink-soft); margin-bottom:8px;">이 링크를 열면 ${esc(studentName)} 학생 기록만 불러와요. 다른 학생 데이터는 이 링크로는 아예 조회되지 않아요.</div>
+      <div style="display:flex; gap:8px;">
+        <input id="wt-parent-link" readonly value="${esc(link)}" onclick="this.select()" style="flex:1;" />
+        <button class="btn-primary" data-action="copy-link">복사</button>
+      </div>
+      <div id="wt-copy-msg" style="font-size:11.5px; color:var(--green); margin-top:6px; min-height:14px;"></div>
+      <button class="btn-text" data-action="clear-manual-base-url" style="margin-top:4px;">이 주소가 틀렸다면 다시 입력하기</button>
+    </div>`;
+  }
+
+  function renderSummary(sd){
+    const { solvedThisMonth, open, stalest } = monthSummary(sd);
+    const monthLabel = (new Date().getMonth()+1) + '월';
+    let warn = '';
+    if (stalest && stalest.days >= 14) {
+      warn = `<div style="margin-top:12px; padding:10px 14px; background:var(--amber-tint); border-radius:8px; font-size:12.5px; color:var(--amber); display:flex; gap:8px; align-items:baseline;">
+        <span class="mono" style="font-weight:600;">주의</span>
+        <span>'${esc(stalest.w.title)}' 항목이 ${stalest.days}일째 업데이트 없이 진행중이에요.</span>
+      </div>`;
+    }
+    return `<div style="background:var(--card); border-radius:12px; padding:20px 22px; border:1px solid var(--line);">
+      <div class="disp" style="font-size:13px; color:var(--ink-faint); margin-bottom:14px; letter-spacing:0.02em;">${monthLabel} 요약</div>
+      <div style="display:flex; gap:32px; flex-wrap:wrap;">
+        <div>
+          <div class="disp" style="font-size:32px; font-weight:700; color:var(--green); line-height:1;">${solvedThisMonth.length}</div>
+          <div style="font-size:12px; color:var(--ink-soft); margin-top:6px;">이번 달 해결한 약점</div>
+        </div>
+        <div>
+          <div class="disp" style="font-size:32px; font-weight:700; color:var(--red); line-height:1;">${open.length}</div>
+          <div style="font-size:12px; color:var(--ink-soft); margin-top:6px;">현재 진행중인 약점</div>
+        </div>
+      </div>
+      ${solvedThisMonth.length ? `<div style="margin-top:14px; padding-top:14px; border-top:1px solid var(--line); font-size:12.5px; color:var(--ink-soft);">
+        ${solvedThisMonth.map(w => `<span style="display:inline-block; margin:3px 6px 3px 0; padding:3px 10px; background:var(--green-tint); color:var(--green); border-radius:14px; font-size:12px;">${esc(w.title)}</span>`).join('')}
+      </div>` : ''}
+      ${warn}
+    </div>`;
+  }
+
+  function renderCheckinRow(w, c, isLast){
+    const key = w.id + '::' + c.id;
+    const editing = ui.editingCheckinKey === key;
+    const confirming = ui.confirmDelete && ui.confirmDelete.type === 'checkin' && ui.confirmDelete.id === c.id && ui.confirmDelete.weaknessId === w.id;
+    const editable = mode === 'teacher';
+    const borderStyle = isLast ? '' : 'border-bottom:1px solid var(--paper);';
+
+    if (editing) {
+      return `<div style="padding:8px 0; ${borderStyle}">
+        <div style="display:flex; gap:8px; margin-bottom:6px;">
+          <input type="date" id="wt-editcheckin-date-${c.id}" value="${esc(c.date)}" style="max-width:150px;" />
+          <select id="wt-editcheckin-status-${c.id}" style="max-width:120px;">
+            <option value="진행중" ${c.status==='진행중'?'selected':''}>진행중</option>
+            <option value="재발" ${c.status==='재발'?'selected':''}>재발</option>
+            <option value="해결" ${c.status==='해결'?'selected':''}>해결</option>
+          </select>
+        </div>
+        <textarea id="wt-editcheckin-note-${c.id}" rows="2" style="margin-bottom:6px; resize:vertical;">${esc(c.note || '')}</textarea>
+        <div style="display:flex; gap:8px;">
+          <button class="btn-primary" data-action="save-edit-checkin" data-id="${c.id}" data-parent="${w.id}">저장</button>
+          <button class="btn-text" data-action="cancel-edit-checkin">취소</button>
+        </div>
+      </div>`;
+    }
+
+    return `<div style="display:flex; gap:10px; padding:7px 0; align-items:flex-start; ${borderStyle}">
+      <div class="mono" style="font-size:11.5px; color:var(--ink-faint); min-width:36px; padding-top:2px;">${fmtDate(c.date)}</div>
+      <div style="flex-shrink:0;">${statusBadge(c.status)}</div>
+      <div style="font-size:12.5px; color:var(--ink-soft); line-height:1.5; flex:1;">${esc(c.note || '')}</div>
+      ${editable ? (confirming ? `
+        <div style="display:flex; gap:6px; align-items:center; flex-shrink:0;">
+          <span style="font-size:11px; color:var(--red);">삭제할까요?</span>
+          <button class="btn-danger-text" data-action="confirm-delete">삭제</button>
+          <button class="btn-text" data-action="cancel-delete">취소</button>
+        </div>
+      ` : `
+        <div style="display:flex; gap:2px; flex-shrink:0;">
+          <button class="btn-text" data-action="edit-checkin" data-id="${c.id}" data-parent="${w.id}">수정</button>
+          <button class="btn-danger-text" data-action="delete-checkin" data-id="${c.id}" data-parent="${w.id}">삭제</button>
+        </div>
+      `) : ''}
+    </div>`;
+  }
+
+  function renderCheckinTimeline(w){
+    const sorted = (w.checkins || []).slice().sort((a,b)=> a.date.localeCompare(b.date));
+    if (!sorted.length) return `<div style="font-size:12px; color:var(--ink-faint); padding:8px 0;">아직 체크인 기록이 없어요.</div>`;
+    return `<div style="margin-top:10px;">${sorted.map((c,i) => renderCheckinRow(w, c, i === sorted.length-1)).join('')}</div>`;
+  }
+
+  function renderCheckinForm(w){
+    if (ui.checkinOpenFor !== w.id) return '';
+    const defaultStatus = ui.checkinPrefillStatus || '진행중';
+    return `<div style="margin-top:10px; padding:12px; background:var(--paper); border-radius:8px;">
+      <div style="display:flex; gap:8px; margin-bottom:8px;">
+        <input type="date" id="wt-checkin-date-${w.id}" value="${todayStr()}" style="max-width:150px;" />
+        <select id="wt-checkin-status-${w.id}" style="max-width:120px;">
+          <option value="진행중" ${defaultStatus==='진행중'?'selected':''}>진행중</option>
+          <option value="재발" ${defaultStatus==='재발'?'selected':''}>재발</option>
+          <option value="해결" ${defaultStatus==='해결'?'selected':''}>해결</option>
+        </select>
+      </div>
+      <textarea id="wt-checkin-note-${w.id}" placeholder="이번 수업에서 확인한 내용을 짧게 적어주세요" rows="2" style="margin-bottom:8px; resize:vertical;"></textarea>
+      <div style="display:flex; gap:8px;">
+        <button class="btn-primary" data-action="save-checkin" data-id="${w.id}">체크인 저장</button>
+        <button class="btn-text" data-action="close-checkin">취소</button>
+      </div>
+    </div>`;
+  }
+
+  function renderWeaknessCard(w){
+    const status = currentStatus(w);
+    const editable = mode === 'teacher';
+    const isEditing = ui.editingWeaknessId === w.id;
+    const isConfirming = ui.confirmDelete && ui.confirmDelete.type === 'weakness' && ui.confirmDelete.id === w.id;
+
+    if (isEditing) {
+      return `<div style="background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px 18px; margin-bottom:10px;">
+        <div style="font-size:12.5px; color:var(--ink-soft); margin-bottom:6px;">약점 내용</div>
+        <textarea id="wt-edit-weakness-title-${w.id}" rows="2" style="margin-bottom:10px; resize:vertical;">${esc(w.title)}</textarea>
+        <div style="font-size:12.5px; color:var(--ink-soft); margin-bottom:6px;">지도 방향</div>
+        <textarea id="wt-edit-weakness-action-${w.id}" rows="2" style="margin-bottom:10px; resize:vertical;">${esc(w.action || '')}</textarea>
+        <div style="display:flex; gap:8px;">
+          <button class="btn-primary" data-action="save-edit-weakness" data-id="${w.id}">저장</button>
+          <button class="btn-text" data-action="cancel-edit-weakness">취소</button>
+        </div>
+      </div>`;
+    }
+
+    return `<div style="background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px 18px; margin-bottom:10px;">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px;">
+        <div style="flex:1;">
+          <div style="font-size:14.5px; font-weight:500; line-height:1.5;">${esc(w.title)}</div>
+          ${w.action ? `<div style="font-size:12.5px; color:var(--ink-soft); margin-top:5px; line-height:1.6;">${esc(w.action)}</div>` : ''}
+          <div class="mono" style="font-size:11px; color:var(--ink-faint); margin-top:8px;">최초 기록 ${fmtDate(w.createdAt)} · 최근 업데이트 ${fmtDate(lastUpdate(w))}</div>
+        </div>
+        <div>${statusBadge(status, 'lg')}</div>
+      </div>
+      ${editable ? `<div style="margin-top:10px;">
+        ${isConfirming ? `
+          <span style="font-size:12px; color:var(--red); margin-right:8px;">삭제할까요? 체크인 기록도 함께 삭제돼요.</span>
+          <button class="btn-danger-text" data-action="confirm-delete">삭제</button>
+          <button class="btn-text" data-action="cancel-delete">취소</button>
+        ` : `
+          <button class="btn-text" data-action="edit-weakness" data-id="${w.id}">수정</button>
+          <button class="btn-danger-text" data-action="delete-weakness" data-id="${w.id}">삭제</button>
+          ${status === '해결' ? `<button class="btn-text" data-action="mark-recurrence" data-id="${w.id}" style="color:var(--amber);">재발로 표시</button>` : ''}
+        `}
+      </div>` : ''}
+      ${renderCheckinTimeline(w)}
+      ${editable ? renderCheckinForm(w) : ''}
+      ${editable && ui.checkinOpenFor !== w.id ? `<button class="btn-text" data-action="open-checkin" data-id="${w.id}" style="margin-top:8px; color:var(--pen);">+ 체크인 기록하기</button>` : ''}
+    </div>`;
+  }
+
+  function renderAddWeaknessForm(){
+    if (!ui.addWeaknessOpen) return '';
+    return `<div style="background:#fff; border:1px solid var(--line); border-radius:12px; padding:16px 18px; margin-bottom:14px;">
+      <div style="font-size:12.5px; color:var(--ink-soft); margin-bottom:6px;">약점 내용</div>
+      <textarea id="wt-new-weakness-title" rows="2" placeholder="예: 이차식의 값 범위를 함숫값 변화로 관찰하지 못함" style="margin-bottom:10px; resize:vertical;"></textarea>
+      <div style="font-size:12.5px; color:var(--ink-soft); margin-bottom:6px;">지도 방향 (선택)</div>
+      <textarea id="wt-new-weakness-action" rows="2" placeholder="예: x의 변화에 따른 함숫값 변화로 관찰하도록 지도" style="margin-bottom:10px; resize:vertical;"></textarea>
+      <div style="display:flex; gap:8px;">
+        <button class="btn-primary" data-action="add-weakness">저장</button>
+        <button class="btn-text" data-action="toggle-add-weakness">취소</button>
+      </div>
+    </div>`;
+  }
+
+  function renderWeaknessSection(sd){
+    const ws = sd.weaknesses || [];
+    const open = ws.filter(w => currentStatus(w) !== '해결').sort((a,b)=> lastUpdate(b).localeCompare(lastUpdate(a)));
+    const solved = ws.filter(w => currentStatus(w) === '해결').sort((a,b)=> lastUpdate(b).localeCompare(lastUpdate(a)));
+
+    let html = `<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+      <div class="disp" style="font-size:15px; font-weight:600;">진행중인 약점 <span class="mono" style="color:var(--ink-faint); font-weight:400; font-size:13px;">(${open.length})</span></div>
+      ${mode==='teacher' ? `<button class="btn-ghost" data-action="toggle-add-weakness">${ui.addWeaknessOpen ? '닫기' : '+ 약점 추가'}</button>` : ''}
+    </div>`;
+    html += renderAddWeaknessForm();
+
+    if (!open.length) {
+      html += `<div style="padding:24px; text-align:center; color:var(--ink-faint); font-size:13px; background:#fff; border:1px dashed var(--line); border-radius:12px;">
+        ${mode==='teacher' ? '진행중인 약점이 없어요. 오늘 수업에서 발견한 약점을 추가해보세요.' : '현재 진행중인 약점이 없어요.'}
+      </div>`;
+    } else {
+      html += open.map(renderWeaknessCard).join('');
+    }
+
+    if (solved.length) {
+      html += `<button data-action="toggle-solved" style="margin-top:14px; font-size:12.5px; color:var(--ink-soft); display:flex; align-items:center; gap:6px;">
+        해결된 약점 ${solved.length}개 ${ui.solvedExpanded ? '접기 ▲' : '보기 ▼'}
+      </button>`;
+      if (ui.solvedExpanded) {
+        html += `<div style="margin-top:10px;">${solved.map(renderWeaknessCard).join('')}</div>`;
+      }
+    }
+    return html;
+  }
+
+  function renderAddProgressForm(){
+    if (!ui.addProgressOpen) return '';
+    return `<div style="display:flex; gap:8px; margin-bottom:10px; align-items:center;">
+      <input type="date" id="wt-new-progress-date" value="${todayStr()}" style="max-width:150px;" />
+      <input id="wt-new-progress-content" placeholder="예: 로그 밑변환 공식 (개념수업)" style="flex:1;" />
+      <button class="btn-primary" data-action="add-progress">추가</button>
+      <button class="btn-text" data-action="toggle-add-progress">취소</button>
+    </div>`;
+  }
+
+  function renderProgressRow(p, isLast){
+    const editing = ui.editingProgressId === p.id;
+    const confirming = ui.confirmDelete && ui.confirmDelete.type === 'progress' && ui.confirmDelete.id === p.id;
+    const borderStyle = isLast ? '' : 'border-bottom:1px solid var(--paper);';
+
+    if (editing) {
+      return `<div style="padding:9px 14px; ${borderStyle}">
+        <div style="display:flex; gap:8px; margin-bottom:6px;">
+          <input type="date" id="wt-editprogress-date-${p.id}" value="${esc(p.date)}" style="max-width:150px;" />
+          <input id="wt-editprogress-content-${p.id}" value="${esc(p.content)}" style="flex:1;" />
+        </div>
+        <div style="display:flex; gap:8px;">
+          <button class="btn-primary" data-action="save-edit-progress" data-id="${p.id}">저장</button>
+          <button class="btn-text" data-action="cancel-edit-progress">취소</button>
+        </div>
+      </div>`;
+    }
+
+    return `<div style="display:flex; gap:14px; padding:9px 14px; align-items:center; ${borderStyle}">
+      <div class="mono" style="font-size:11.5px; color:var(--ink-faint); min-width:34px;">${fmtDate(p.date)}</div>
+      <div style="font-size:12.5px; color:var(--ink-soft); flex:1;">${esc(p.content)}</div>
+      ${mode === 'teacher' ? (confirming ? `
+        <div style="display:flex; gap:6px; align-items:center;">
+          <span style="font-size:11px; color:var(--red);">삭제할까요?</span>
+          <button class="btn-danger-text" data-action="confirm-delete">삭제</button>
+          <button class="btn-text" data-action="cancel-delete">취소</button>
+        </div>
+      ` : `
+        <div style="display:flex; gap:2px;">
+          <button class="btn-text" data-action="edit-progress" data-id="${p.id}">수정</button>
+          <button class="btn-danger-text" data-action="delete-progress" data-id="${p.id}">삭제</button>
+        </div>
+      `) : ''}
+    </div>`;
+  }
+
+  function renderProgressSection(sd){
+    const ps = (sd.progress || []).slice().sort((a,b)=> b.date.localeCompare(a.date));
+    let html = `<button data-action="toggle-progress" style="display:flex; align-items:center; gap:6px; font-size:13px; color:var(--ink-soft); margin-bottom:${ui.progressExpanded ? '12px' : '0'};">
+      <span class="disp" style="font-weight:600; color:var(--ink);">진도 기록</span>
+      <span class="mono" style="color:var(--ink-faint);">(${ps.length})</span>
+      <span style="margin-left:2px;">${ui.progressExpanded ? '▲' : '▼'}</span>
+    </button>`;
+    if (ui.progressExpanded) {
+      if (mode === 'teacher') {
+        html += `<div style="margin-top:10px; margin-bottom:8px;">
+          ${ui.addProgressOpen ? renderAddProgressForm() : `<button class="btn-text" data-action="toggle-add-progress" style="color:var(--pen);">+ 진도 추가</button>`}
+        </div>`;
+      }
+      if (!ps.length) {
+        html += `<div style="padding:14px; font-size:12.5px; color:var(--ink-faint);">기록된 진도가 없어요.</div>`;
+      } else {
+        html += `<div style="background:#fff; border:1px solid var(--line); border-radius:10px; overflow:hidden;">
+          ${ps.map((p,i) => renderProgressRow(p, i === ps.length-1)).join('')}
+        </div>`;
+      }
+    }
+    return html;
+  }
+
+  function render(){
+    if (!ui.loaded) {
+      root.innerHTML = `<div style="padding:40px; text-align:center; color:var(--ink-faint); font-size:13px;">불러오는 중...</div>`;
+      return;
+    }
+
+    if (ui.noStorageApi) {
+      root.innerHTML = `
+        <div style="padding:32px 24px; text-align:center; background:#fff; border:1px solid var(--red-tint); border-radius:12px;">
+          <div style="font-size:14px; color:var(--red); margin-bottom:10px; font-weight:500;">이 브라우저에서는 저장 기능을 쓸 수 없어요.</div>
+          <div style="font-size:12.5px; color:var(--ink-soft); line-height:1.7;">브라우저의 저장 기능이 꺼져 있거나(예: 시크릿 모드 일부 설정) 지원되지 않는 환경이에요.<br>일반 브라우저 창에서 이 파일을 다시 열어봐 주세요.</div>
+        </div>
+      `;
+      return;
+    }
+
+    if (ui.locked) {
+      if (!studentData) {
+        root.innerHTML = `
+          <div style="padding:48px 24px; text-align:center; background:#fff; border:1px dashed var(--line); border-radius:12px;">
+            <div style="font-size:14px; color:var(--ink-soft); margin-bottom:14px;">기록을 불러오지 못했어요. 링크가 잘못됐거나 일시적인 문제일 수 있어요.</div>
+            ${lastErrorDetail ? `<div class="mono" style="font-size:11px; color:var(--ink-faint); margin-bottom:14px;">${esc(lastErrorDetail)}</div>` : ''}
+            <button class="btn-primary" data-action="retry-load">다시 시도</button>
+          </div>
+        `;
+        attachEvents();
+        return;
+      }
+    } else {
+      if (!index.length) {
+        root.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <div class="disp" style="font-size:20px; font-weight:700;">약점 추적</div>
+            ${renderModeToggle()}
+          </div>
+          <div style="padding:48px 24px; text-align:center; background:#fff; border:1px dashed var(--line); border-radius:12px;">
+            <div style="font-size:14px; color:var(--ink-soft); margin-bottom:16px;">아직 등록된 학생이 없어요.</div>
+            ${mode === 'teacher' ? `
+              <button class="btn-primary" data-action="toggle-add-student" style="display:inline-block;">학생 추가</button>
+              ${renderAddStudentForm()}
+            ` : `<div style="font-size:13px; color:var(--ink-faint);">선생님이 아직 기록을 시작하지 않았어요.</div>`}
+          </div>
+        `;
+        attachEvents();
+        return;
+      }
+      if (ui.loadFailed) {
+        root.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <div class="disp" style="font-size:20px; font-weight:700;">약점 추적</div>
+            ${renderModeToggle()}
+          </div>
+          ${renderStudentTabs()}
+          <div style="margin-top:16px; padding:32px 24px; text-align:center; background:#fff; border:1px solid var(--red-tint); border-radius:12px;">
+            <div style="font-size:14px; color:var(--red); margin-bottom:14px;">이 학생 데이터를 불러오지 못했어요. 기존 기록이 지워진 건 아니에요 — 불러오기가 성공하기 전까지는 아무것도 저장되지 않아요.</div>
+            ${lastErrorDetail ? `<div class="mono" style="font-size:11px; color:var(--ink-faint); margin-bottom:14px;">${esc(lastErrorDetail)}</div>` : ''}
+            <button class="btn-primary" data-action="retry-load">다시 시도</button>
+          </div>
+        `;
+        attachEvents();
+        return;
+      }
+      if (!studentData) {
+        root.innerHTML = `<div style="padding:40px; text-align:center; color:var(--ink-faint); font-size:13px;">불러오는 중...</div>`;
+        return;
+      }
+    }
+
+    const sd = studentData;
+    const editingName = !ui.locked && mode === 'teacher' && ui.editingStudentName;
+    const confirmingStudentDelete = ui.confirmDelete && ui.confirmDelete.type === 'student' && ui.confirmDelete.id === currentStudentId;
+
+    root.innerHTML = `
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; gap:12px; flex-wrap:wrap;">
+        ${editingName ? `
+          <div style="display:flex; gap:8px; align-items:center; flex:1; min-width:220px;">
+            <input id="wt-edit-student-name" value="${esc(sd.name)}" style="max-width:240px;" />
+            <button class="btn-primary" data-action="save-edit-student-name">저장</button>
+            <button class="btn-text" data-action="cancel-edit-student-name">취소</button>
+          </div>
+        ` : `
+          <div class="disp" style="font-size:20px; font-weight:700;">${esc(sd.name)}<span style="font-size:13px; font-weight:400; color:var(--ink-faint); margin-left:8px;">약점 추적</span></div>
+        `}
+        <div style="display:flex; gap:8px; align-items:center;">
+          ${renderModeToggle()}
+        </div>
+      </div>
+      ${(!ui.locked && mode === 'teacher' && !editingName) ? `<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
+        <div style="display:flex; gap:4px; align-items:center;">
+          ${confirmingStudentDelete ? `
+            <span style="font-size:12px; color:var(--red);">'${esc(sd.name)}' 학생과 모든 기록을 삭제할까요?</span>
+            <button class="btn-danger-text" data-action="confirm-delete">삭제</button>
+            <button class="btn-text" data-action="cancel-delete">취소</button>
+          ` : `
+            <button class="btn-text" data-action="start-edit-student-name">이름 수정</button>
+            <button class="btn-text" data-action="toggle-student-active" data-id="${currentStudentId}">${isActive(currentStudentId) ? '수업 종료로 표시' : '다시 활성화'}</button>
+            <button class="btn-ghost" data-action="toggle-link-panel">학부모 링크 만들기</button>
+            <button class="btn-danger-text" data-action="delete-student" data-id="${currentStudentId}">학생 삭제</button>
+          `}
+        </div>
+      </div>` : ''}
+      ${(!ui.locked && mode === 'teacher') ? `<div style="display:flex; justify-content:flex-end; gap:12px; margin-bottom:14px; align-items:center;">
+        <span class="mono" style="font-size:10.5px; color:var(--ink-faint);">${STORAGE_MODE === 'supabase' ? '저장 위치: Supabase (기기 상관없이 공유됨)' : STORAGE_MODE === 'cloud' ? '저장 위치: 공유 저장소 (링크로 공유 가능)' : '저장 위치: 이 브라우저 (이 기기에만 저장됨)'}</span>
+        ${STORAGE_MODE !== 'supabase' && !sbClient && SUPABASE_URL && SUPABASE_URL.indexOf('YOUR_') !== 0 ? `<span class="mono" style="font-size:10.5px; color:var(--red);">Supabase 연결 실패 — 콘솔을 확인해주세요</span>` : ''}
+        <button class="btn-text" data-action="export-data">데이터 내보내기</button>
+        <button class="btn-text" data-action="trigger-import">가져오기</button>
+        <input type="file" id="wt-import-file" accept="application/json" style="display:none;" />
+      </div>` : ''}
+      ${(!ui.locked && mode === 'teacher') ? renderLinkPanel(currentStudentId, sd.name) : ''}
+      ${renderStudentTabs()}
+      ${renderAddStudentForm()}
+      <div style="height:20px;"></div>
+      ${renderSummary(sd)}
+      <div style="height:24px;"></div>
+      ${renderWeaknessSection(sd)}
+      <div style="height:20px; border-top:1px solid var(--line); margin-top:4px;"></div>
+      <div style="margin-top:20px;">${renderProgressSection(sd)}</div>
+      ${ui.error ? `<div style="margin-top:14px; font-size:12px; color:var(--red);">${esc(ui.error)}</div>` : ''}
+      <div style="margin-top:20px; font-size:11px; color:var(--ink-faint);">${ui.locked ? '이 링크는 이 학생의 기록만 불러와요.' : '학부모 링크로 접속한 사람은 해당 학생 데이터만 조회할 수 있어요.'}</div>
+      ${lastErrorDetail ? `<div class="mono" style="margin-top:6px; font-size:10.5px; color:var(--ink-faint);">last error: ${esc(lastErrorDetail)}</div>` : ''}
+    `;
+    attachEvents();
+  }
+
+  function attachEvents(){
+    root.querySelectorAll('[data-action]').forEach(el => {
+      el.addEventListener('click', onAction);
+    });
+    const fileInput = document.getElementById('wt-import-file');
+    if (fileInput) {
+      fileInput.addEventListener('change', (e) => {
+        const f = e.target.files && e.target.files[0];
+        if (f) handleImportFile(f);
+      });
+    }
+  }
+
+  async function onAction(e){
+    const action = e.currentTarget.getAttribute('data-action');
+    const id = e.currentTarget.getAttribute('data-id');
+    const parent = e.currentTarget.getAttribute('data-parent');
+
+    if (action === 'select-student') { await selectStudent(id); return; }
+    if (action === 'retry-load') {
+      if (ui.locked) {
+        studentData = await loadStudentData(currentStudentId);
+        render();
+      } else {
+        await selectStudent(currentStudentId);
+      }
+      return;
+    }
+    if (action === 'set-mode') {
+      mode = e.currentTarget.getAttribute('data-mode');
+      ui.addWeaknessOpen = false; ui.addStudentOpen = false; ui.addProgressOpen = false;
+      ui.checkinOpenFor = null; ui.editingWeaknessId = null; ui.editingCheckinKey = null;
+      ui.editingProgressId = null; ui.confirmDelete = null;
+      render(); return;
+    }
+    if (action === 'toggle-add-student') { ui.addStudentOpen = !ui.addStudentOpen; render(); return; }
+    if (action === 'toggle-add-weakness') { ui.addWeaknessOpen = !ui.addWeaknessOpen; render(); return; }
+    if (action === 'toggle-add-progress') { ui.addProgressOpen = !ui.addProgressOpen; render(); return; }
+    if (action === 'toggle-solved') { ui.solvedExpanded = !ui.solvedExpanded; render(); return; }
+    if (action === 'toggle-progress') { ui.progressExpanded = !ui.progressExpanded; render(); return; }
+    if (action === 'open-checkin') { ui.checkinOpenFor = id; ui.checkinPrefillStatus = null; render(); return; }
+    if (action === 'close-checkin') { ui.checkinOpenFor = null; ui.checkinPrefillStatus = null; render(); return; }
+    if (action === 'mark-recurrence') { ui.checkinOpenFor = id; ui.checkinPrefillStatus = '재발'; ui.solvedExpanded = true; render(); return; }
+    if (action === 'toggle-ended') { ui.endedExpanded = !ui.endedExpanded; render(); return; }
+    if (action === 'toggle-student-active') {
+      const s = index.find(x => x.id === id);
+      if (s) { s.active = (s.active === false) ? true : false; }
+      await saveIndex();
+      render();
+      return;
+    }
+    if (action === 'toggle-link-panel') { ui.linkPanelOpen = !ui.linkPanelOpen; render(); return; }
+    if (action === 'set-manual-base-url') {
+      const input = document.getElementById('wt-manual-base-url');
+      const val = input ? input.value.trim() : '';
+      if (!val) return;
+      ui.manualBaseUrl = val;
+      render();
+      return;
+    }
+    if (action === 'clear-manual-base-url') { ui.manualBaseUrl = null; render(); return; }
+    if (action === 'start-edit-student-name') { ui.editingStudentName = true; render(); return; }
+    if (action === 'cancel-edit-student-name') { ui.editingStudentName = false; render(); return; }
+    if (action === 'save-edit-student-name') {
+      const nameInput = document.getElementById('wt-edit-student-name');
+      const name = nameInput ? nameInput.value.trim() : '';
+      if (!name) return;
+      const s = index.find(x => x.id === currentStudentId);
+      if (s) s.name = name;
+      await saveIndex();
+      studentData.name = name;
+      ui.editingStudentName = false;
+      await persist();
+      return;
+    }
+    if (action === 'delete-student') { ui.confirmDelete = { type: 'student', id }; render(); return; }
+    if (action === 'export-data') { await exportData(); return; }
+    if (action === 'trigger-import') {
+      const fileInput = document.getElementById('wt-import-file');
+      if (fileInput) fileInput.click();
+      return;
+    }
+
+    if (action === 'edit-weakness') { ui.editingWeaknessId = id; ui.confirmDelete = null; render(); return; }
+    if (action === 'cancel-edit-weakness') { ui.editingWeaknessId = null; render(); return; }
+    if (action === 'delete-weakness') { ui.confirmDelete = { type: 'weakness', id }; render(); return; }
+
+    if (action === 'edit-checkin') { ui.editingCheckinKey = parent + '::' + id; ui.confirmDelete = null; render(); return; }
+    if (action === 'cancel-edit-checkin') { ui.editingCheckinKey = null; render(); return; }
+    if (action === 'delete-checkin') { ui.confirmDelete = { type: 'checkin', id, weaknessId: parent }; render(); return; }
+
+    if (action === 'edit-progress') { ui.editingProgressId = id; ui.confirmDelete = null; render(); return; }
+    if (action === 'cancel-edit-progress') { ui.editingProgressId = null; render(); return; }
+    if (action === 'delete-progress') { ui.confirmDelete = { type: 'progress', id }; render(); return; }
+
+    if (action === 'cancel-delete') { ui.confirmDelete = null; render(); return; }
+
+    if (action === 'confirm-delete') {
+      const cd = ui.confirmDelete;
+      if (!cd) return;
+      if (cd.type === 'student') {
+        const deletedId = cd.id;
+        index = index.filter(s => s.id !== deletedId);
+        await saveIndex();
+        try { await rawDelete(studentKey(deletedId)); } catch(e) {}
+        ui.confirmDelete = null;
+        if (index.length) {
+          const preferred = index.find(s => s.active !== false) || index[0];
+          await selectStudent(preferred.id);
+        } else {
+          currentStudentId = null;
+          studentData = null;
+          render();
+        }
+        return;
+      }
+      if (cd.type === 'weakness') {
+        studentData.weaknesses = (studentData.weaknesses || []).filter(w => w.id !== cd.id);
+      } else if (cd.type === 'checkin') {
+        const w = (studentData.weaknesses || []).find(x => x.id === cd.weaknessId);
+        if (w) w.checkins = (w.checkins || []).filter(c => c.id !== cd.id);
+      } else if (cd.type === 'progress') {
+        studentData.progress = (studentData.progress || []).filter(p => p.id !== cd.id);
+      }
+      ui.confirmDelete = null;
+      await persist();
+      return;
+    }
+
+    if (action === 'copy-link') {
+      const input = document.getElementById('wt-parent-link');
+      const msg = document.getElementById('wt-copy-msg');
+      if (!input) return;
+      input.select();
+      let copied = false;
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(input.value);
+          copied = true;
+        }
+      } catch(err) { copied = false; }
+      if (!copied) {
+        try { copied = document.execCommand('copy'); } catch(err) { copied = false; }
+      }
+      if (msg) msg.textContent = copied ? '복사했어요.' : '자동 복사가 안 됐어요. 입력창을 눌러 직접 선택해서 복사해주세요.';
+      return;
+    }
+
+    if (action === 'add-student') {
+      const nameInput = document.getElementById('wt-new-student-name');
+      const name = nameInput ? nameInput.value.trim() : '';
+      if (!name) return;
+      const newId = uid();
+      index.push({ id: newId, name, createdAt: todayStr(), active: true });
+      await saveIndex();
+      currentStudentId = newId;
+      studentData = { name, createdAt: todayStr(), weaknesses: [], progress: [] };
+      ui.addStudentOpen = false;
+      await persist();
+      return;
+    }
+
+    if (action === 'add-weakness') {
+      const titleInput = document.getElementById('wt-new-weakness-title');
+      const actionInput = document.getElementById('wt-new-weakness-action');
+      const title = titleInput ? titleInput.value.trim() : '';
+      if (!title) return;
+      studentData.weaknesses = studentData.weaknesses || [];
+      studentData.weaknesses.push({
+        id: uid(),
+        title,
+        action: actionInput ? actionInput.value.trim() : '',
+        createdAt: todayStr(),
+        checkins: []
+      });
+      ui.addWeaknessOpen = false;
+      await persist();
+      return;
+    }
+
+    if (action === 'save-edit-weakness') {
+      const titleInput = document.getElementById('wt-edit-weakness-title-' + id);
+      const actionInput = document.getElementById('wt-edit-weakness-action-' + id);
+      const title = titleInput ? titleInput.value.trim() : '';
+      if (!title) return;
+      const w = (studentData.weaknesses || []).find(x => x.id === id);
+      if (!w) return;
+      w.title = title;
+      w.action = actionInput ? actionInput.value.trim() : '';
+      ui.editingWeaknessId = null;
+      await persist();
+      return;
+    }
+
+    if (action === 'save-checkin') {
+      const dateInput = document.getElementById('wt-checkin-date-' + id);
+      const statusInput = document.getElementById('wt-checkin-status-' + id);
+      const noteInput = document.getElementById('wt-checkin-note-' + id);
+      const w = (studentData.weaknesses || []).find(x => x.id === id);
+      if (!w) return;
+      w.checkins = w.checkins || [];
+      w.checkins.push({
+        id: uid(),
+        date: dateInput ? dateInput.value || todayStr() : todayStr(),
+        status: statusInput ? statusInput.value : '진행중',
+        note: noteInput ? noteInput.value.trim() : ''
+      });
+      ui.checkinOpenFor = null;
+      ui.checkinPrefillStatus = null;
+      await persist();
+      return;
+    }
+
+    if (action === 'save-edit-checkin') {
+      const dateInput = document.getElementById('wt-editcheckin-date-' + id);
+      const statusInput = document.getElementById('wt-editcheckin-status-' + id);
+      const noteInput = document.getElementById('wt-editcheckin-note-' + id);
+      const w = (studentData.weaknesses || []).find(x => x.id === parent);
+      if (!w) return;
+      const c = (w.checkins || []).find(x => x.id === id);
+      if (!c) return;
+      c.date = dateInput ? dateInput.value || c.date : c.date;
+      c.status = statusInput ? statusInput.value : c.status;
+      c.note = noteInput ? noteInput.value.trim() : c.note;
+      ui.editingCheckinKey = null;
+      await persist();
+      return;
+    }
+
+    if (action === 'add-progress') {
+      const dateInput = document.getElementById('wt-new-progress-date');
+      const contentInput = document.getElementById('wt-new-progress-content');
+      const content = contentInput ? contentInput.value.trim() : '';
+      if (!content) return;
+      studentData.progress = studentData.progress || [];
+      studentData.progress.push({
+        id: uid(),
+        date: dateInput ? dateInput.value || todayStr() : todayStr(),
+        content
+      });
+      ui.addProgressOpen = false;
+      await persist();
+      return;
+    }
+
+    if (action === 'save-edit-progress') {
+      const dateInput = document.getElementById('wt-editprogress-date-' + id);
+      const contentInput = document.getElementById('wt-editprogress-content-' + id);
+      const content = contentInput ? contentInput.value.trim() : '';
+      if (!content) return;
+      const p = (studentData.progress || []).find(x => x.id === id);
+      if (!p) return;
+      p.date = dateInput ? dateInput.value || p.date : p.date;
+      p.content = content;
+      ui.editingProgressId = null;
+      await persist();
+      return;
+    }
+  }
+
+  load();
+})();
+</script>
