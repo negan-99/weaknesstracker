@@ -156,13 +156,8 @@
     addExamOpen: false,
     editingExamId: null,
     pastExamsExpanded: false,
-    addAssignmentOpen: false,
-    editingAssignmentId: null,
-    assignmentCheckinOpenFor: null,
-    assignmentCheckinPrefillStatus: null,
-    editingAssignmentCheckinKey: null,
-    completedAssignmentsExpanded: false,
-    assignmentFilter: 'all',
+    addNoteOpen: false,
+    editingNoteId: null,
     confirmDelete: null,
     solvedExpanded: false,
     progressExpanded: false,
@@ -333,12 +328,8 @@
     ui.addExamOpen = false;
     ui.editingExamId = null;
     ui.pastExamsExpanded = false;
-    ui.addAssignmentOpen = false;
-    ui.editingAssignmentId = null;
-    ui.assignmentCheckinOpenFor = null;
-    ui.assignmentCheckinPrefillStatus = null;
-    ui.editingAssignmentCheckinKey = null;
-    ui.completedAssignmentsExpanded = false;
+    ui.addNoteOpen = false;
+    ui.editingNoteId = null;
     render();
   }
 
@@ -459,17 +450,6 @@
       return `<span class="disp" style="display:inline-block; padding:3px 16px; border:2px solid ${s.fg}; border-radius:999px; transform:rotate(-3deg); font-size:13px; font-weight:600; color:${s.fg}; line-height:1.4;">${s.label}</span>`;
     }
     return `<span class="mono" style="display:inline-block; padding:${big?'5px 12px':'3px 9px'}; border-radius:5px; background:${s.bg}; color:${s.fg}; font-size:${big?'12px':'11px'}; font-weight:600; letter-spacing:0.02em;">${s.label}</span>`;
-  }
-
-  function currentAssignmentStatus(a){
-    if (!a.checkins || !a.checkins.length) return '진행중';
-    const sorted = a.checkins.slice().sort((x,y)=> x.date.localeCompare(y.date));
-    return sorted[sorted.length-1].status;
-  }
-  function lastAssignmentUpdate(a){
-    if (!a.checkins || !a.checkins.length) return a.createdAt;
-    const sorted = a.checkins.slice().sort((x,y)=> x.date.localeCompare(y.date));
-    return sorted[sorted.length-1].date;
   }
 
   function examStatus(e){
@@ -867,182 +847,64 @@
     return html;
   }
 
-  function renderAddAssignmentForm(){
-    if (!ui.addAssignmentOpen) return '';
+  function renderAddNoteForm(){
+    if (!ui.addNoteOpen) return '';
     return `<div style="background:#fff; border:1px solid var(--line); border-radius:12px; padding:16px 18px; margin-bottom:14px;">
-      <div style="display:flex; gap:8px; margin-bottom:10px;">
-        <select id="wt-new-assignment-type" style="max-width:110px;">
-          <option value="일일">일일</option>
-          <option value="특수">특수</option>
-        </select>
-        <input id="wt-new-assignment-title" placeholder="과제 내용" style="flex:1;" />
-        <input type="date" id="wt-new-assignment-due" style="max-width:150px;" />
-      </div>
+      <input type="date" id="wt-new-note-date" value="${todayStr()}" style="max-width:150px; margin-bottom:10px;" />
+      <textarea id="wt-new-note-content" rows="3" placeholder="예: 요즘 집중력이 떨어짐, 학부모 상담 요청함, 다음 주 결석 예정 등" style="margin-bottom:10px; resize:vertical;"></textarea>
       <div style="display:flex; gap:8px;">
-        <button class="btn-primary" data-action="add-assignment">저장</button>
-        <button class="btn-text" data-action="toggle-add-assignment">취소</button>
+        <button class="btn-primary" data-action="add-note">저장</button>
+        <button class="btn-text" data-action="toggle-add-note">취소</button>
       </div>
     </div>`;
   }
 
-  function renderAssignmentTypeBadge(type){
-    const isDaily = type === '일일';
-    return `<span class="mono" style="display:inline-block; padding:2px 8px; border-radius:5px; background:${isDaily ? 'var(--pen-tint)' : 'var(--amber-tint)'}; color:${isDaily ? 'var(--pen)' : 'var(--amber)'}; font-size:10.5px; font-weight:600;">${esc(type)}</span>`;
-  }
-
-  function renderAssignmentCheckinRow(a, c, isLast){
-    const key = a.id + '::' + c.id;
-    const editing = ui.editingAssignmentCheckinKey === key;
-    const confirming = ui.confirmDelete && ui.confirmDelete.type === 'assignmentCheckin' && ui.confirmDelete.id === c.id && ui.confirmDelete.assignmentId === a.id;
-    const editable = mode === 'teacher';
-    const borderStyle = isLast ? '' : 'border-bottom:1px solid var(--paper);';
+  function renderNoteRow(n){
+    const editing = ui.editingNoteId === n.id;
+    const confirming = ui.confirmDelete && ui.confirmDelete.type === 'note' && ui.confirmDelete.id === n.id;
 
     if (editing) {
-      return `<div style="padding:8px 0; ${borderStyle}">
-        <div style="display:flex; gap:8px; margin-bottom:6px;">
-          <input type="date" id="wt-editacheckin-date-${c.id}" value="${esc(c.date)}" style="max-width:150px;" />
-          <select id="wt-editacheckin-status-${c.id}" style="max-width:120px;">
-            <option value="진행중" ${c.status==='진행중'?'selected':''}>진행중</option>
-            <option value="완료" ${c.status==='완료'?'selected':''}>완료</option>
-          </select>
-        </div>
-        <textarea id="wt-editacheckin-note-${c.id}" rows="2" style="margin-bottom:6px; resize:vertical;">${esc(c.note || '')}</textarea>
-        <div style="display:flex; gap:8px;">
-          <button class="btn-primary" data-action="save-edit-assignment-checkin" data-id="${c.id}" data-parent="${a.id}">저장</button>
-          <button class="btn-text" data-action="cancel-edit-assignment-checkin">취소</button>
-        </div>
-      </div>`;
-    }
-
-    return `<div style="display:flex; gap:10px; padding:7px 0; align-items:flex-start; ${borderStyle}">
-      <div class="mono" style="font-size:11.5px; color:var(--ink-faint); min-width:36px; padding-top:2px;">${fmtDate(c.date)}</div>
-      <div style="flex-shrink:0;">${statusBadge(c.status)}</div>
-      <div style="font-size:12.5px; color:var(--ink-soft); line-height:1.5; flex:1;">${esc(c.note || '')}</div>
-      ${editable ? (confirming ? `
-        <div style="display:flex; gap:6px; align-items:center; flex-shrink:0;">
-          <span style="font-size:11px; color:var(--red);">삭제할까요?</span>
-          <button class="btn-danger-text" data-action="confirm-delete">삭제</button>
-          <button class="btn-text" data-action="cancel-delete">취소</button>
-        </div>
-      ` : `
-        <div style="display:flex; gap:2px; flex-shrink:0;">
-          <button class="btn-text" data-action="edit-assignment-checkin" data-id="${c.id}" data-parent="${a.id}">수정</button>
-          <button class="btn-danger-text" data-action="delete-assignment-checkin" data-id="${c.id}" data-parent="${a.id}">삭제</button>
-        </div>
-      `) : ''}
-    </div>`;
-  }
-
-  function renderAssignmentCheckinTimeline(a){
-    const sorted = (a.checkins || []).slice().sort((x,y)=> x.date.localeCompare(y.date));
-    if (!sorted.length) return `<div style="font-size:12px; color:var(--ink-faint); padding:8px 0;">아직 진행상황 기록이 없어요.</div>`;
-    return `<div style="margin-top:10px;">${sorted.map((c,i) => renderAssignmentCheckinRow(a, c, i === sorted.length-1)).join('')}</div>`;
-  }
-
-  function renderAssignmentCheckinForm(a){
-    if (ui.assignmentCheckinOpenFor !== a.id) return '';
-    const defaultStatus = ui.assignmentCheckinPrefillStatus || '진행중';
-    return `<div style="margin-top:10px; padding:12px; background:var(--paper); border-radius:8px;">
-      <div style="display:flex; gap:8px; margin-bottom:8px;">
-        <input type="date" id="wt-acheckin-date-${a.id}" value="${todayStr()}" style="max-width:150px;" />
-        <select id="wt-acheckin-status-${a.id}" style="max-width:120px;">
-          <option value="진행중" ${defaultStatus==='진행중'?'selected':''}>진행중</option>
-          <option value="완료" ${defaultStatus==='완료'?'selected':''}>완료</option>
-        </select>
-      </div>
-      <textarea id="wt-acheckin-note-${a.id}" placeholder="진행상황을 짧게 적어주세요" rows="2" style="margin-bottom:8px; resize:vertical;"></textarea>
-      <div style="display:flex; gap:8px;">
-        <button class="btn-primary" data-action="save-assignment-checkin" data-id="${a.id}">저장</button>
-        <button class="btn-text" data-action="close-assignment-checkin">취소</button>
-      </div>
-    </div>`;
-  }
-
-  function renderAssignmentCard(a){
-    const status = currentAssignmentStatus(a);
-    const editable = mode === 'teacher';
-    const isEditing = ui.editingAssignmentId === a.id;
-    const isConfirming = ui.confirmDelete && ui.confirmDelete.type === 'assignment' && ui.confirmDelete.id === a.id;
-
-    if (isEditing) {
       return `<div style="background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px 18px; margin-bottom:10px;">
-        <div style="display:flex; gap:8px; margin-bottom:10px;">
-          <select id="wt-edit-assignment-type-${a.id}" style="max-width:110px;">
-            <option value="일일" ${a.type==='일일'?'selected':''}>일일</option>
-            <option value="특수" ${a.type==='특수'?'selected':''}>특수</option>
-          </select>
-          <input id="wt-edit-assignment-title-${a.id}" value="${esc(a.title)}" style="flex:1;" />
-          <input type="date" id="wt-edit-assignment-due-${a.id}" value="${esc(a.dueDate || '')}" style="max-width:150px;" />
-        </div>
+        <input type="date" id="wt-edit-note-date-${n.id}" value="${esc(n.date)}" style="max-width:150px; margin-bottom:10px;" />
+        <textarea id="wt-edit-note-content-${n.id}" rows="3" style="margin-bottom:10px; resize:vertical;">${esc(n.content)}</textarea>
         <div style="display:flex; gap:8px;">
-          <button class="btn-primary" data-action="save-edit-assignment" data-id="${a.id}">저장</button>
-          <button class="btn-text" data-action="cancel-edit-assignment">취소</button>
+          <button class="btn-primary" data-action="save-edit-note" data-id="${n.id}">저장</button>
+          <button class="btn-text" data-action="cancel-edit-note">취소</button>
         </div>
       </div>`;
     }
 
     return `<div style="background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px 18px; margin-bottom:10px;">
-      <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px;">
-        <div style="flex:1;">
-          <div style="display:flex; align-items:center; gap:8px;">
-            ${renderAssignmentTypeBadge(a.type)}
-            <div style="font-size:14.5px; font-weight:500;">${esc(a.title)}</div>
-          </div>
-          <div class="mono" style="font-size:11px; color:var(--ink-faint); margin-top:8px;">최초 기록 ${fmtDate(a.createdAt)} · 최근 업데이트 ${fmtDate(lastAssignmentUpdate(a))}${a.dueDate ? ' · 마감 ' + esc(a.dueDate) : ''}</div>
-        </div>
-        <div>${statusBadge(status, 'lg')}</div>
-      </div>
-      ${editable ? `<div style="margin-top:10px;">
-        ${isConfirming ? `
-          <span style="font-size:12px; color:var(--red); margin-right:8px;">삭제할까요? 진행상황 기록도 함께 삭제돼요.</span>
+      <div class="mono" style="font-size:11px; color:var(--ink-faint); margin-bottom:8px;">${fmtDate(n.date)}</div>
+      <div style="font-size:13px; color:var(--ink); line-height:1.7; white-space:pre-wrap;">${esc(n.content)}</div>
+      <div style="margin-top:10px;">
+        ${confirming ? `
+          <span style="font-size:12px; color:var(--red); margin-right:8px;">삭제할까요?</span>
           <button class="btn-danger-text" data-action="confirm-delete">삭제</button>
           <button class="btn-text" data-action="cancel-delete">취소</button>
         ` : `
-          <button class="btn-text" data-action="edit-assignment" data-id="${a.id}">수정</button>
-          <button class="btn-danger-text" data-action="delete-assignment" data-id="${a.id}">삭제</button>
+          <button class="btn-text" data-action="edit-note" data-id="${n.id}">수정</button>
+          <button class="btn-danger-text" data-action="delete-note" data-id="${n.id}">삭제</button>
         `}
-      </div>` : ''}
-      ${renderAssignmentCheckinTimeline(a)}
-      ${editable ? renderAssignmentCheckinForm(a) : ''}
-      ${editable && ui.assignmentCheckinOpenFor !== a.id ? `<button class="btn-text" data-action="open-assignment-checkin" data-id="${a.id}" style="margin-top:8px; color:var(--pen);">+ 진행상황 기록하기</button>` : ''}
+      </div>
     </div>`;
   }
 
-  function renderAssignmentSection(sd){
-    const all = sd.assignments || [];
-    const filtered = ui.assignmentFilter === 'all' ? all : all.filter(a => a.type === ui.assignmentFilter);
-    const open = filtered.filter(a => currentAssignmentStatus(a) !== '완료').sort((x,y)=> lastAssignmentUpdate(y).localeCompare(lastAssignmentUpdate(x)));
-    const done = filtered.filter(a => currentAssignmentStatus(a) === '완료').sort((x,y)=> lastAssignmentUpdate(y).localeCompare(lastAssignmentUpdate(x)));
-
-    const filterPill = (val, label) => `<button data-action="set-assignment-filter" data-id="${val}" style="
-      padding:5px 12px; border-radius:14px; font-size:12px; font-weight:500;
-      background:${ui.assignmentFilter===val ? 'var(--ink)' : '#fff'}; color:${ui.assignmentFilter===val ? '#fff' : 'var(--ink-soft)'};
-      border:1px solid ${ui.assignmentFilter===val ? 'var(--ink)' : 'var(--line)'};">${label}</button>`;
-
-    let html = `<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
-      <div class="disp" style="font-size:15px; font-weight:600;">과제 <span class="mono" style="color:var(--ink-faint); font-weight:400; font-size:13px;">(${open.length})</span></div>
-      ${mode==='teacher' ? `<button class="btn-ghost" data-action="toggle-add-assignment">${ui.addAssignmentOpen ? '닫기' : '+ 과제 추가'}</button>` : ''}
+  function renderNoteSection(sd){
+    const notes = (sd.notes || []).slice().sort((x,y)=> y.date.localeCompare(x.date));
+    let html = `<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+      <div class="disp" style="font-size:15px; font-weight:600;">학생 특이사항 기록 <span class="mono" style="color:var(--ink-faint); font-weight:400; font-size:13px;">(${notes.length})</span></div>
+      <button class="btn-ghost" data-action="toggle-add-note">${ui.addNoteOpen ? '닫기' : '+ 특이사항 추가'}</button>
     </div>
-    <div style="display:flex; gap:6px; margin-bottom:12px;">
-      ${filterPill('all', '전체')}${filterPill('일일', '일일')}${filterPill('특수', '특수')}
-    </div>`;
-    html += renderAddAssignmentForm();
+    <div style="font-size:11.5px; color:var(--ink-faint); margin-bottom:12px;">이 기록은 학부모 보기에는 절대 표시되지 않아요.</div>`;
+    html += renderAddNoteForm();
 
-    if (!open.length) {
+    if (!notes.length) {
       html += `<div style="padding:24px; text-align:center; color:var(--ink-faint); font-size:13px; background:#fff; border:1px dashed var(--line); border-radius:12px;">
-        진행중인 과제가 없어요.
+        기록된 특이사항이 없어요.
       </div>`;
     } else {
-      html += open.map(renderAssignmentCard).join('');
-    }
-
-    if (done.length) {
-      html += `<button data-action="toggle-completed-assignments" style="margin-top:14px; font-size:12.5px; color:var(--ink-soft); display:flex; align-items:center; gap:6px;">
-        완료된 과제 ${done.length}개 ${ui.completedAssignmentsExpanded ? '접기 ▲' : '보기 ▼'}
-      </button>`;
-      if (ui.completedAssignmentsExpanded) {
-        html += `<div style="margin-top:10px;">${done.map(renderAssignmentCard).join('')}</div>`;
-      }
+      html += notes.map(renderNoteRow).join('');
     }
     return html;
   }
@@ -1252,8 +1114,10 @@
       ${renderWeaknessSection(sd)}
       <div style="height:20px; border-top:1px solid var(--line); margin-top:4px;"></div>
       ${renderExamSection(sd)}
-      <div style="height:20px; border-top:1px solid var(--line); margin-top:4px;"></div>
-      ${renderAssignmentSection(sd)}
+      ${mode === 'teacher' ? `
+        <div style="height:20px; border-top:1px solid var(--line); margin-top:4px;"></div>
+        ${renderNoteSection(sd)}
+      ` : ''}
       <div style="height:20px; border-top:1px solid var(--line); margin-top:4px;"></div>
       <div style="margin-top:20px;">${renderProgressSection(sd)}</div>
       ${ui.error ? `<div style="margin-top:14px; font-size:12px; color:var(--red);">${esc(ui.error)}</div>` : ''}
@@ -1326,8 +1190,7 @@
       ui.checkinOpenFor = null; ui.editingWeaknessId = null; ui.editingCheckinKey = null;
       ui.editingProgressId = null; ui.confirmDelete = null;
       ui.addExamOpen = false; ui.editingExamId = null;
-      ui.addAssignmentOpen = false; ui.editingAssignmentId = null;
-      ui.assignmentCheckinOpenFor = null; ui.editingAssignmentCheckinKey = null;
+      ui.addNoteOpen = false; ui.editingNoteId = null;
       render(); return;
     }
     if (action === 'toggle-add-student') { ui.addStudentOpen = !ui.addStudentOpen; render(); return; }
@@ -1425,11 +1288,8 @@
         studentData.progress = (studentData.progress || []).filter(p => p.id !== cd.id);
       } else if (cd.type === 'exam') {
         studentData.exams = (studentData.exams || []).filter(e => e.id !== cd.id);
-      } else if (cd.type === 'assignment') {
-        studentData.assignments = (studentData.assignments || []).filter(a => a.id !== cd.id);
-      } else if (cd.type === 'assignmentCheckin') {
-        const a = (studentData.assignments || []).find(x => x.id === cd.assignmentId);
-        if (a) a.checkins = (a.checkins || []).filter(c => c.id !== cd.id);
+      } else if (cd.type === 'note') {
+        studentData.notes = (studentData.notes || []).filter(n => n.id !== cd.id);
       }
       ui.confirmDelete = null;
       await persist();
@@ -1463,7 +1323,7 @@
       index.push({ id: newId, name, createdAt: todayStr(), active: true });
       await saveIndex();
       currentStudentId = newId;
-      studentData = { name, createdAt: todayStr(), weaknesses: [], progress: [], exams: [], assignments: [] };
+      studentData = { name, createdAt: todayStr(), weaknesses: [], progress: [], exams: [], notes: [] };
       ui.addStudentOpen = false;
       await persist();
       return;
@@ -1549,86 +1409,39 @@
       return;
     }
 
-    // ---- 과제 ----
-    if (action === 'toggle-add-assignment') { ui.addAssignmentOpen = !ui.addAssignmentOpen; render(); return; }
-    if (action === 'toggle-completed-assignments') { ui.completedAssignmentsExpanded = !ui.completedAssignmentsExpanded; render(); return; }
-    if (action === 'set-assignment-filter') { ui.assignmentFilter = id; render(); return; }
-    if (action === 'edit-assignment') { ui.editingAssignmentId = id; ui.confirmDelete = null; render(); return; }
-    if (action === 'cancel-edit-assignment') { ui.editingAssignmentId = null; render(); return; }
-    if (action === 'delete-assignment') { ui.confirmDelete = { type: 'assignment', id }; render(); return; }
-    if (action === 'open-assignment-checkin') { ui.assignmentCheckinOpenFor = id; ui.assignmentCheckinPrefillStatus = null; render(); return; }
-    if (action === 'close-assignment-checkin') { ui.assignmentCheckinOpenFor = null; ui.assignmentCheckinPrefillStatus = null; render(); return; }
-    if (action === 'edit-assignment-checkin') { ui.editingAssignmentCheckinKey = parent + '::' + id; ui.confirmDelete = null; render(); return; }
-    if (action === 'cancel-edit-assignment-checkin') { ui.editingAssignmentCheckinKey = null; render(); return; }
-    if (action === 'delete-assignment-checkin') { ui.confirmDelete = { type: 'assignmentCheckin', id, assignmentId: parent }; render(); return; }
+    // ---- 학생 특이사항 ----
+    if (action === 'toggle-add-note') { ui.addNoteOpen = !ui.addNoteOpen; render(); return; }
+    if (action === 'edit-note') { ui.editingNoteId = id; ui.confirmDelete = null; render(); return; }
+    if (action === 'cancel-edit-note') { ui.editingNoteId = null; render(); return; }
+    if (action === 'delete-note') { ui.confirmDelete = { type: 'note', id }; render(); return; }
 
-    if (action === 'add-assignment') {
-      const typeInput = document.getElementById('wt-new-assignment-type');
-      const titleInput = document.getElementById('wt-new-assignment-title');
-      const dueInput = document.getElementById('wt-new-assignment-due');
-      const title = titleInput ? titleInput.value.trim() : '';
-      if (!title) return;
-      studentData.assignments = studentData.assignments || [];
-      studentData.assignments.push({
-        id: uid(),
-        type: typeInput ? typeInput.value : '일일',
-        title,
-        dueDate: dueInput ? dueInput.value : '',
-        createdAt: todayStr(),
-        checkins: []
-      });
-      ui.addAssignmentOpen = false;
-      await persist();
-      return;
-    }
-
-    if (action === 'save-edit-assignment') {
-      const typeInput = document.getElementById('wt-edit-assignment-type-' + id);
-      const titleInput = document.getElementById('wt-edit-assignment-title-' + id);
-      const dueInput = document.getElementById('wt-edit-assignment-due-' + id);
-      const title = titleInput ? titleInput.value.trim() : '';
-      if (!title) return;
-      const a = (studentData.assignments || []).find(x => x.id === id);
-      if (!a) return;
-      a.type = typeInput ? typeInput.value : a.type;
-      a.title = title;
-      a.dueDate = dueInput ? dueInput.value : a.dueDate;
-      ui.editingAssignmentId = null;
-      await persist();
-      return;
-    }
-
-    if (action === 'save-assignment-checkin') {
-      const dateInput = document.getElementById('wt-acheckin-date-' + id);
-      const statusInput = document.getElementById('wt-acheckin-status-' + id);
-      const noteInput = document.getElementById('wt-acheckin-note-' + id);
-      const a = (studentData.assignments || []).find(x => x.id === id);
-      if (!a) return;
-      a.checkins = a.checkins || [];
-      a.checkins.push({
+    if (action === 'add-note') {
+      const dateInput = document.getElementById('wt-new-note-date');
+      const contentInput = document.getElementById('wt-new-note-content');
+      const content = contentInput ? contentInput.value.trim() : '';
+      if (!content) return;
+      studentData.notes = studentData.notes || [];
+      studentData.notes.push({
         id: uid(),
         date: dateInput ? dateInput.value || todayStr() : todayStr(),
-        status: statusInput ? statusInput.value : '진행중',
-        note: noteInput ? noteInput.value.trim() : ''
+        content,
+        createdAt: todayStr()
       });
-      ui.assignmentCheckinOpenFor = null;
-      ui.assignmentCheckinPrefillStatus = null;
+      ui.addNoteOpen = false;
       await persist();
       return;
     }
 
-    if (action === 'save-edit-assignment-checkin') {
-      const dateInput = document.getElementById('wt-editacheckin-date-' + id);
-      const statusInput = document.getElementById('wt-editacheckin-status-' + id);
-      const noteInput = document.getElementById('wt-editacheckin-note-' + id);
-      const a = (studentData.assignments || []).find(x => x.id === parent);
-      if (!a) return;
-      const c = (a.checkins || []).find(x => x.id === id);
-      if (!c) return;
-      c.date = dateInput ? dateInput.value || c.date : c.date;
-      c.status = statusInput ? statusInput.value : c.status;
-      c.note = noteInput ? noteInput.value.trim() : c.note;
-      ui.editingAssignmentCheckinKey = null;
+    if (action === 'save-edit-note') {
+      const dateInput = document.getElementById('wt-edit-note-date-' + id);
+      const contentInput = document.getElementById('wt-edit-note-content-' + id);
+      const content = contentInput ? contentInput.value.trim() : '';
+      if (!content) return;
+      const n = (studentData.notes || []).find(x => x.id === id);
+      if (!n) return;
+      n.date = dateInput ? dateInput.value || n.date : n.date;
+      n.content = content;
+      ui.editingNoteId = null;
       await persist();
       return;
     }
