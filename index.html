@@ -158,6 +158,8 @@
     progressExpanded: false,
     linkPanelOpen: false,
     manualBaseUrl: null,
+    authEmail: '',
+    authError: null,
     locked: false,
     loaded: false,
     loadFailed: false,
@@ -321,6 +323,16 @@
     render();
   }
 
+  let authed = false;
+
+  async function checkAuth(){
+    if (STORAGE_MODE !== 'supabase' || !sbClient) { authed = true; return; }
+    try {
+      const { data } = await sbClient.auth.getSession();
+      authed = !!(data && data.session);
+    } catch(e) { authed = false; }
+  }
+
   async function load(){
     if (STORAGE_MODE === 'none') {
       ui.noStorageApi = true;
@@ -334,14 +346,22 @@
       mode = 'parent';
       currentStudentId = hashStudent;
       studentData = await loadStudentData(hashStudent);
-    } else {
-      await loadIndex();
-      if (index.length) {
-        const preferred = index.find(s => s.active !== false) || index[0];
-        currentStudentId = preferred.id;
-        const sd = await loadStudentData(currentStudentId);
-        if (sd) { studentData = sd; } else { ui.loadFailed = true; }
-      }
+      ui.loaded = true;
+      render();
+      return;
+    }
+    await checkAuth();
+    if (!authed) {
+      ui.loaded = true;
+      render();
+      return;
+    }
+    await loadIndex();
+    if (index.length) {
+      const preferred = index.find(s => s.active !== false) || index[0];
+      currentStudentId = preferred.id;
+      const sd = await loadStudentData(currentStudentId);
+      if (sd) { studentData = sd; } else { ui.loadFailed = true; }
     }
     ui.loaded = true;
     render();
@@ -791,6 +811,23 @@
       return;
     }
 
+    if (!ui.locked && STORAGE_MODE === 'supabase' && !authed) {
+      root.innerHTML = `
+        <div style="max-width:340px; margin:40px auto; padding:28px; background:#fff; border:1px solid var(--line); border-radius:12px;">
+          <div class="disp" style="font-size:17px; font-weight:700; margin-bottom:4px;">선생님 로그인</div>
+          <div style="font-size:12.5px; color:var(--ink-soft); margin-bottom:18px;">학생 기록을 관리하려면 로그인해주세요.</div>
+          <div style="margin-bottom:10px;">
+            <input id="wt-login-email" type="email" placeholder="이메일" value="${esc(ui.authEmail)}" style="margin-bottom:8px;" />
+            <input id="wt-login-password" type="password" placeholder="비밀번호" />
+          </div>
+          ${ui.authError ? `<div style="font-size:12px; color:var(--red); margin-bottom:10px;">${esc(ui.authError)}</div>` : ''}
+          <button class="btn-primary" data-action="login" style="width:100%;">로그인</button>
+        </div>
+      `;
+      attachEvents();
+      return;
+    }
+
     if (ui.locked) {
       if (!studentData) {
         root.innerHTML = `
@@ -859,6 +896,7 @@
           <div class="disp" style="font-size:20px; font-weight:700;">${esc(sd.name)}<span style="font-size:13px; font-weight:400; color:var(--ink-faint); margin-left:8px;">약점 추적</span></div>
         `}
         <div style="display:flex; gap:8px; align-items:center;">
+          ${(!ui.locked && STORAGE_MODE === 'supabase') ? `<button class="btn-text" data-action="logout">로그아웃</button>` : ''}
           ${renderModeToggle()}
         </div>
       </div>
@@ -918,6 +956,35 @@
     const parent = e.currentTarget.getAttribute('data-parent');
 
     if (action === 'select-student') { await selectStudent(id); return; }
+    if (action === 'login') {
+      const emailInput = document.getElementById('wt-login-email');
+      const passInput = document.getElementById('wt-login-password');
+      const email = emailInput ? emailInput.value.trim() : '';
+      const password = passInput ? passInput.value : '';
+      ui.authEmail = email;
+      if (!email || !password) { ui.authError = '이메일과 비밀번호를 입력해주세요.'; render(); return; }
+      try {
+        const { error } = await sbClient.auth.signInWithPassword({ email, password });
+        if (error) { ui.authError = error.message; render(); return; }
+        ui.authError = null;
+        ui.loaded = false;
+        render();
+        await load();
+      } catch(e) {
+        ui.authError = describeError(e);
+        render();
+      }
+      return;
+    }
+    if (action === 'logout') {
+      try { await sbClient.auth.signOut(); } catch(e) {}
+      authed = false;
+      index = [];
+      currentStudentId = null;
+      studentData = null;
+      render();
+      return;
+    }
     if (action === 'retry-load') {
       if (ui.locked) {
         studentData = await loadStudentData(currentStudentId);
