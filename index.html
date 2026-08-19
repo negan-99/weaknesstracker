@@ -196,6 +196,8 @@
     addNoteOpen: false,
     editingNoteId: null,
     billingReceiptDraft: null,
+    paymentsExpanded: false,
+    editingBillingSettings: false,
     confirmDelete: null,
     solvedExpanded: false,
     progressExpanded: false,
@@ -369,6 +371,8 @@
     ui.addNoteOpen = false;
     ui.editingNoteId = null;
     ui.billingReceiptDraft = null;
+    ui.paymentsExpanded = false;
+    ui.editingBillingSettings = false;
     render();
   }
 
@@ -573,13 +577,13 @@
 
   function renderBillingSection(sd){
     const b = sd.billing || defaultBilling();
+    const isUnset = !b.hasReceipt && !b.tuitionFee && !b.monthlySessions;
+    const editing = ui.editingBillingSettings || isUnset;
     const showReceiptField = ui.billingReceiptDraft !== null ? ui.billingReceiptDraft : !!b.hasReceipt;
     const needsConfirm = b.monthlySessions > 0 && b.currentSession >= b.monthlySessions;
     const payments = (b.payments || []).slice().sort((x,y)=> y.date.localeCompare(x.date));
 
-    return `<div style="background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px 18px; margin-bottom:16px;">
-      <div class="disp" style="font-size:15px; font-weight:600; margin-bottom:12px;">수납 관리</div>
-
+    const settingsBlock = editing ? `
       <label style="display:flex; align-items:center; gap:8px; font-size:13px; margin-bottom:10px; cursor:pointer;">
         <input type="checkbox" id="wt-billing-receipt" data-action="toggle-receipt-draft" ${showReceiptField ? 'checked' : ''} style="width:auto; min-height:auto;" />
         현금영수증 발행
@@ -589,7 +593,21 @@
       <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
         <input type="number" min="1" id="wt-billing-sessions" placeholder="월 수업 횟수" value="${b.monthlySessions || ''}" style="max-width:140px;" />
         <button class="btn-primary" data-action="save-billing-settings">저장</button>
+        ${!isUnset ? `<button class="btn-text" data-action="cancel-billing-settings">취소</button>` : ''}
       </div>
+    ` : `
+      <div style="font-size:13px; color:var(--ink-soft); line-height:1.9;">
+        현금영수증 &nbsp;${b.hasReceipt ? `발행 <span class="mono" style="color:var(--ink-faint);">(${esc(b.receiptNumber || '번호 미입력')})</span>` : '미발행'}<br>
+        수업료 &nbsp;${b.tuitionFee ? `<span style="color:var(--ink); font-weight:500;">${esc(b.tuitionFee)}원</span>` : '미입력'}<br>
+        월 수업 횟수 &nbsp;${b.monthlySessions ? `<span style="color:var(--ink); font-weight:500;">${b.monthlySessions}회</span>` : '미설정'}
+      </div>
+      <button class="btn-text" data-action="edit-billing-settings" style="margin-top:8px; color:var(--pen);">수정</button>
+    `;
+
+    return `<div style="background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px 18px; margin-bottom:16px;">
+      <div class="disp" style="font-size:15px; font-weight:600; margin-bottom:12px;">수납 관리</div>
+
+      ${settingsBlock}
 
       ${b.monthlySessions > 0 ? `
         <div style="border-top:1px solid var(--paper); margin-top:14px; padding-top:14px;">
@@ -611,16 +629,28 @@
 
       ${payments.length ? `
         <div style="margin-top:16px; border-top:1px solid var(--paper); padding-top:12px;">
-          <div style="font-size:12.5px; color:var(--ink-soft); margin-bottom:8px;">수납 기록</div>
-          ${payments.map(p => `
-            <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; padding:6px 0; flex-wrap:wrap;">
+          <button data-action="toggle-payments" style="display:flex; align-items:center; gap:6px; font-size:12.5px; color:var(--ink-soft);">
+            수납 기록 <span class="mono" style="color:var(--ink-faint);">(${payments.length})</span> ${ui.paymentsExpanded ? '접기 ▲' : '보기 ▼'}
+          </button>
+          ${ui.paymentsExpanded ? payments.map(p => {
+            const confirmingPayment = ui.confirmDelete && ui.confirmDelete.type === 'payment' && ui.confirmDelete.id === p.id;
+            return `
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; padding:8px 0; flex-wrap:wrap; border-bottom:1px solid var(--paper);">
               <input type="date" class="wt-payment-date" data-payment-id="${p.id}" value="${esc(p.date)}" style="max-width:150px; font-size:12px; padding:5px 8px;" />
               <label style="display:flex; align-items:center; gap:6px; font-size:12.5px; cursor:pointer;">
                 <input type="checkbox" data-action="toggle-payment-received" data-id="${p.id}" ${p.received ? 'checked' : ''} style="width:auto; min-height:auto;" />
                 수업료 받음
               </label>
+              ${confirmingPayment ? `
+                <span style="font-size:11px; color:var(--red);">삭제할까요?</span>
+                <button class="btn-danger-text" data-action="confirm-delete">삭제</button>
+                <button class="btn-text" data-action="cancel-delete">취소</button>
+              ` : `
+                <button class="btn-danger-text" data-action="delete-payment" data-id="${p.id}">삭제</button>
+              `}
             </div>
-          `).join('')}
+          `;
+          }).join('') : ''}
         </div>
       ` : ''}
     </div>`;
@@ -1326,6 +1356,8 @@
       render();
       return;
     }
+    if (action === 'edit-billing-settings') { ui.editingBillingSettings = true; render(); return; }
+    if (action === 'cancel-billing-settings') { ui.editingBillingSettings = false; ui.billingReceiptDraft = null; render(); return; }
     if (action === 'save-billing-settings') {
       const receiptInput = document.getElementById('wt-billing-receipt');
       const receiptNumberInput = document.getElementById('wt-billing-receipt-number');
@@ -1340,6 +1372,7 @@
       b.monthlySessions = (!isNaN(sessionsVal) && sessionsVal > 0) ? sessionsVal : 0;
       if (b.currentSession > b.monthlySessions) b.currentSession = 0;
       ui.billingReceiptDraft = null;
+      ui.editingBillingSettings = false;
       await persist();
       return;
     }
@@ -1374,6 +1407,8 @@
       await persist();
       return;
     }
+    if (action === 'toggle-payments') { ui.paymentsExpanded = !ui.paymentsExpanded; render(); return; }
+    if (action === 'delete-payment') { ui.confirmDelete = { type: 'payment', id }; render(); return; }
     if (action === 'set-manual-base-url') {
       const input = document.getElementById('wt-manual-base-url');
       const val = input ? input.value.trim() : '';
@@ -1454,6 +1489,9 @@
         studentData.exams = (studentData.exams || []).filter(e => e.id !== cd.id);
       } else if (cd.type === 'note') {
         studentData.notes = (studentData.notes || []).filter(n => n.id !== cd.id);
+      } else if (cd.type === 'payment') {
+        studentData.billing = studentData.billing || defaultBilling();
+        studentData.billing.payments = (studentData.billing.payments || []).filter(p => p.id !== cd.id);
       }
       ui.confirmDelete = null;
       await persist();
