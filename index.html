@@ -195,6 +195,7 @@
     pastExamsExpanded: false,
     addNoteOpen: false,
     editingNoteId: null,
+    billingReceiptDraft: null,
     confirmDelete: null,
     solvedExpanded: false,
     progressExpanded: false,
@@ -367,6 +368,7 @@
     ui.pastExamsExpanded = false;
     ui.addNoteOpen = false;
     ui.editingNoteId = null;
+    ui.billingReceiptDraft = null;
     render();
   }
 
@@ -472,7 +474,7 @@
     return sorted[sorted.length-1].date;
   }
 
-  function statusBadge(status, size){
+  function statusBadge(status, size, customLabel){
     const map = {
       '진행중': {bg:'var(--red-tint)', fg:'var(--red)', label:'진행중'},
       '해결': {bg:'var(--green-tint)', fg:'var(--green)', label:'해결'},
@@ -483,10 +485,8 @@
     };
     const s = map[status] || map['진행중'];
     const big = size === 'lg';
-    if ((status === '해결' || status === '완료') && big) {
-      return `<span class="disp" style="display:inline-block; padding:3px 16px; border:2px solid ${s.fg}; border-radius:999px; transform:rotate(-3deg); font-size:13px; font-weight:600; color:${s.fg}; line-height:1.4;">${s.label}</span>`;
-    }
-    return `<span class="mono" style="display:inline-block; padding:${big?'5px 12px':'3px 9px'}; border-radius:5px; background:${s.bg}; color:${s.fg}; font-size:${big?'12px':'11px'}; font-weight:600; letter-spacing:0.02em;">${s.label}</span>`;
+    const label = customLabel || s.label;
+    return `<span class="mono" style="display:inline-block; padding:${big?'6px 14px':'3px 9px'}; border-radius:7px; background:${s.bg}; color:${s.fg}; font-size:${big?'12.5px':'11px'}; font-weight:700; letter-spacing:0.02em; white-space:nowrap;">${esc(label)}</span>`;
   }
 
   function examStatus(e){
@@ -536,13 +536,13 @@
     const addBtn = mode === 'teacher'
       ? `<button data-action="toggle-add-student" style="padding:8px 14px; border-radius:20px; font-size:13px; color:var(--pen); border:1px dashed var(--pen-tint); background:#fff; white-space:nowrap;">+ 학생 추가</button>`
       : '';
-    let html = `<div style="display:flex; gap:8px; overflow-x:auto; padding-bottom:4px;">${activeList.map(s => tabBtn(s, false)).join('')}${addBtn}</div>`;
+    let html = `<div class="wt-tabs-row" style="display:flex; gap:8px; overflow-x:auto; padding-bottom:4px;">${activeList.map(s => tabBtn(s, false)).join('')}${addBtn}</div>`;
     if (endedList.length) {
       html += `<button data-action="toggle-ended" style="margin-top:8px; font-size:12px; color:var(--ink-soft); display:flex; align-items:center; gap:6px;">
         수업 종료 학생 ${endedList.length}명 ${ui.endedExpanded ? '접기 ▲' : '보기 ▼'}
       </button>`;
       if (ui.endedExpanded) {
-        html += `<div style="display:flex; gap:8px; overflow-x:auto; padding:8px 0 0;">${endedList.map(s => tabBtn(s, true)).join('')}</div>`;
+        html += `<div class="wt-tabs-row" style="display:flex; gap:8px; overflow-x:auto; padding:8px 0 0;">${endedList.map(s => tabBtn(s, true)).join('')}</div>`;
       }
     }
     return html;
@@ -564,6 +564,65 @@
         background:${mode==='teacher' ? 'var(--pen)' : 'transparent'}; color:${mode==='teacher' ? '#fff' : 'var(--ink-soft)'};">선생님 보기</button>
       <button data-action="set-mode" data-mode="parent" style="padding:6px 14px; border-radius:16px; font-size:12px; font-weight:500;
         background:${mode==='parent' ? 'var(--pen)' : 'transparent'}; color:${mode==='parent' ? '#fff' : 'var(--ink-soft)'};">학부모 보기</button>
+    </div>`;
+  }
+
+  function defaultBilling(){
+    return { hasReceipt: false, receiptNumber: '', tuitionFee: '', monthlySessions: 0, currentSession: 0, payments: [] };
+  }
+
+  function renderBillingSection(sd){
+    const b = sd.billing || defaultBilling();
+    const showReceiptField = ui.billingReceiptDraft !== null ? ui.billingReceiptDraft : !!b.hasReceipt;
+    const needsConfirm = b.monthlySessions > 0 && b.currentSession >= b.monthlySessions;
+    const payments = (b.payments || []).slice().sort((x,y)=> y.date.localeCompare(x.date));
+
+    return `<div style="background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px 18px; margin-bottom:16px;">
+      <div class="disp" style="font-size:15px; font-weight:600; margin-bottom:12px;">수납 관리</div>
+
+      <label style="display:flex; align-items:center; gap:8px; font-size:13px; margin-bottom:10px; cursor:pointer;">
+        <input type="checkbox" id="wt-billing-receipt" data-action="toggle-receipt-draft" ${showReceiptField ? 'checked' : ''} style="width:auto; min-height:auto;" />
+        현금영수증 발행
+      </label>
+      ${showReceiptField ? `<input id="wt-billing-receipt-number" placeholder="현금영수증 번호" value="${esc(b.receiptNumber || '')}" style="margin-bottom:10px;" />` : ''}
+      <input id="wt-billing-fee" placeholder="수업료 (예: 150000)" value="${esc(b.tuitionFee || '')}" style="margin-bottom:10px;" />
+      <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+        <input type="number" min="1" id="wt-billing-sessions" placeholder="월 수업 횟수" value="${b.monthlySessions || ''}" style="max-width:140px;" />
+        <button class="btn-primary" data-action="save-billing-settings">저장</button>
+      </div>
+
+      ${b.monthlySessions > 0 ? `
+        <div style="border-top:1px solid var(--paper); margin-top:14px; padding-top:14px;">
+          <div style="font-size:12.5px; color:var(--ink-soft); margin-bottom:8px;">현재 수업 회차</div>
+          <div style="display:flex; align-items:center; gap:14px;">
+            <button class="btn-ghost" data-action="decrement-session" ${b.currentSession <= 0 ? 'disabled' : ''} style="min-width:44px;">−</button>
+            <div class="disp" style="font-size:22px; font-weight:700; min-width:64px; text-align:center;">${b.currentSession} / ${b.monthlySessions}</div>
+            <button class="btn-ghost" data-action="increment-session" ${needsConfirm ? 'disabled' : ''} style="min-width:44px;">+</button>
+          </div>
+        </div>
+      ` : ''}
+
+      ${needsConfirm ? `
+        <div style="margin-top:14px; padding:12px 14px; background:var(--amber-tint); border-radius:8px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+          <span style="font-size:13px; color:var(--amber); font-weight:600;">수업료를 받아야 합니다</span>
+          <button class="btn-primary" data-action="confirm-fee-due">확인</button>
+        </div>
+      ` : ''}
+
+      ${payments.length ? `
+        <div style="margin-top:16px; border-top:1px solid var(--paper); padding-top:12px;">
+          <div style="font-size:12.5px; color:var(--ink-soft); margin-bottom:8px;">수납 기록</div>
+          ${payments.map(p => `
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; padding:6px 0; flex-wrap:wrap;">
+              <input type="date" class="wt-payment-date" data-payment-id="${p.id}" value="${esc(p.date)}" style="max-width:150px; font-size:12px; padding:5px 8px;" />
+              <label style="display:flex; align-items:center; gap:6px; font-size:12.5px; cursor:pointer;">
+                <input type="checkbox" data-action="toggle-payment-received" data-id="${p.id}" ${p.received ? 'checked' : ''} style="width:auto; min-height:auto;" />
+                수업료 받음
+              </label>
+            </div>
+          `).join('')}
+        </div>
+      ` : ''}
     </div>`;
   }
 
@@ -833,12 +892,12 @@
       <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px;">
         <div style="flex:1;">
           <div style="font-size:14.5px; font-weight:500;">${esc(e.title)}</div>
-          <div class="mono" style="font-size:11px; color:var(--ink-faint); margin-top:6px;">${esc(e.date)} ${status === '예정' ? '· ' + examDday(e) : ''}</div>
+          <div class="mono" style="font-size:11px; color:var(--ink-faint); margin-top:6px;">${esc(e.date)}</div>
           ${e.scope ? `<div style="font-size:12.5px; color:var(--ink-soft); margin-top:8px; line-height:1.6;">${esc(e.scope)}</div>` : ''}
           ${e.result ? `<div style="font-size:12.5px; color:var(--ink); margin-top:8px;"><span style="color:var(--ink-faint);">결과 </span>${esc(e.result)}</div>` : ''}
           ${e.feedback ? `<div style="font-size:12.5px; color:var(--ink-soft); margin-top:4px; line-height:1.6;">${esc(e.feedback)}</div>` : ''}
         </div>
-        <div>${statusBadge(status, 'lg')}</div>
+        <div>${status === '예정' ? statusBadge(status, 'lg', examDday(e)) : statusBadge(status, 'lg')}</div>
       </div>
       ${editable ? `<div style="margin-top:10px;">
         ${confirming ? `
@@ -1106,7 +1165,7 @@
     const confirmingStudentDelete = ui.confirmDelete && ui.confirmDelete.type === 'student' && ui.confirmDelete.id === currentStudentId;
 
     root.innerHTML = `
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; gap:12px; flex-wrap:wrap;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; gap:12px; flex-wrap:wrap;">
         ${editingName ? `
           <div style="display:flex; gap:8px; align-items:center; flex:1; min-width:220px; flex-wrap:wrap;">
             <input id="wt-edit-student-name" value="${esc(sd.name)}" style="max-width:240px; flex:1; min-width:140px;" />
@@ -1121,6 +1180,7 @@
           ${renderModeToggle()}
         </div>
       </div>
+      ${mode === 'teacher' ? renderBillingSection(sd) : ''}
       ${(!ui.locked && mode === 'teacher' && !editingName) ? `<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
         <div style="display:flex; gap:4px; align-items:center; flex-wrap:wrap;">
           ${confirmingStudentDelete ? `
@@ -1175,6 +1235,18 @@
         if (f) handleImportFile(f);
       });
     }
+    root.querySelectorAll('.wt-payment-date').forEach(el => {
+      el.addEventListener('change', async (e) => {
+        const pid = e.target.getAttribute('data-payment-id');
+        const val = e.target.value;
+        if (!val) return;
+        studentData.billing = studentData.billing || defaultBilling();
+        const p = (studentData.billing.payments || []).find(x => x.id === pid);
+        if (!p) return;
+        p.date = val;
+        await persist();
+      });
+    });
   }
 
   async function onAction(e){
@@ -1247,6 +1319,61 @@
       return;
     }
     if (action === 'toggle-link-panel') { ui.linkPanelOpen = !ui.linkPanelOpen; render(); return; }
+
+    // ---- 수납 관리 ----
+    if (action === 'toggle-receipt-draft') {
+      ui.billingReceiptDraft = e.currentTarget.checked;
+      render();
+      return;
+    }
+    if (action === 'save-billing-settings') {
+      const receiptInput = document.getElementById('wt-billing-receipt');
+      const receiptNumberInput = document.getElementById('wt-billing-receipt-number');
+      const feeInput = document.getElementById('wt-billing-fee');
+      const sessionsInput = document.getElementById('wt-billing-sessions');
+      studentData.billing = studentData.billing || defaultBilling();
+      const b = studentData.billing;
+      b.hasReceipt = receiptInput ? receiptInput.checked : b.hasReceipt;
+      b.receiptNumber = b.hasReceipt ? (receiptNumberInput ? receiptNumberInput.value.trim() : b.receiptNumber) : '';
+      b.tuitionFee = feeInput ? feeInput.value.trim() : b.tuitionFee;
+      const sessionsVal = sessionsInput ? parseInt(sessionsInput.value, 10) : NaN;
+      b.monthlySessions = (!isNaN(sessionsVal) && sessionsVal > 0) ? sessionsVal : 0;
+      if (b.currentSession > b.monthlySessions) b.currentSession = 0;
+      ui.billingReceiptDraft = null;
+      await persist();
+      return;
+    }
+    if (action === 'increment-session') {
+      studentData.billing = studentData.billing || defaultBilling();
+      const b = studentData.billing;
+      if (b.currentSession < b.monthlySessions) { b.currentSession += 1; }
+      await persist();
+      return;
+    }
+    if (action === 'decrement-session') {
+      studentData.billing = studentData.billing || defaultBilling();
+      const b = studentData.billing;
+      if (b.currentSession > 0) { b.currentSession -= 1; }
+      await persist();
+      return;
+    }
+    if (action === 'confirm-fee-due') {
+      studentData.billing = studentData.billing || defaultBilling();
+      const b = studentData.billing;
+      b.payments = b.payments || [];
+      b.payments.push({ id: uid(), date: todayStr(), received: false });
+      b.currentSession = 0;
+      await persist();
+      return;
+    }
+    if (action === 'toggle-payment-received') {
+      studentData.billing = studentData.billing || defaultBilling();
+      const b = studentData.billing;
+      const p = (b.payments || []).find(x => x.id === id);
+      if (p) p.received = e.currentTarget.checked;
+      await persist();
+      return;
+    }
     if (action === 'set-manual-base-url') {
       const input = document.getElementById('wt-manual-base-url');
       const val = input ? input.value.trim() : '';
@@ -1360,7 +1487,7 @@
       index.push({ id: newId, name, createdAt: todayStr(), active: true });
       await saveIndex();
       currentStudentId = newId;
-      studentData = { name, createdAt: todayStr(), weaknesses: [], progress: [], exams: [], notes: [] };
+      studentData = { name, createdAt: todayStr(), weaknesses: [], progress: [], exams: [], notes: [], billing: defaultBilling() };
       ui.addStudentOpen = false;
       await persist();
       return;
