@@ -494,7 +494,7 @@
 
   function statusBadge(status, size, customLabel){
     const map = {
-      '진행중': {bg:'var(--red-tint)', fg:'var(--red)', label:'진행중'},
+      '진행중': {bg:'var(--red-tint)', fg:'var(--red)', label:'교정중'},
       '해결': {bg:'var(--green-tint)', fg:'var(--green)', label:'해결'},
       '완료': {bg:'var(--green-tint)', fg:'var(--green)', label:'완료'},
       '재발': {bg:'var(--amber-tint)', fg:'var(--amber)', label:'재발'},
@@ -746,7 +746,7 @@
     if (stalest && stalest.days >= 14) {
       warn = `<div style="margin-top:12px; padding:10px 14px; background:var(--amber-tint); border-radius:8px; font-size: 15px; color:var(--amber); display:flex; gap:8px; align-items:baseline;">
         <span class="mono" style="font-weight:600;">주의</span>
-        <span>'${esc(stalest.w.title)}' 항목이 ${stalest.days}일째 업데이트 없이 진행중이에요.</span>
+        <span>'${esc(stalest.w.title)}' 항목이 ${stalest.days}일째 업데이트 없이 교정중이에요.</span>
       </div>`;
     }
     return `<div style="background:var(--card); border-radius:12px; padding:20px 22px; border:1px solid var(--line);">
@@ -758,7 +758,7 @@
         </div>
         <div>
           <div class="disp" style="font-size: 34px; font-weight:700; color:var(--red); line-height:1;">${open.length}</div>
-          <div style="font-size: 14.5px; color:var(--ink-soft); margin-top:6px;">현재 진행중인 약점</div>
+          <div style="font-size: 14.5px; color:var(--ink-soft); margin-top:6px;">현재 교정중인 약점</div>
         </div>
       </div>
       ${solvedThisMonth.length ? `<div style="margin-top:14px; padding-top:14px; border-top:1px solid var(--line); font-size: 15px; color:var(--ink-soft);">
@@ -780,7 +780,7 @@
         <div style="display:flex; gap:8px; margin-bottom:6px;">
           <input type="date" id="wt-editcheckin-date-${c.id}" value="${esc(c.date)}" style="max-width:150px;" />
           <select id="wt-editcheckin-status-${c.id}" style="max-width:120px;">
-            <option value="진행중" ${c.status==='진행중'?'selected':''}>진행중</option>
+            <option value="진행중" ${c.status==='진행중'?'selected':''}>교정중</option>
             <option value="재발" ${c.status==='재발'?'selected':''}>재발</option>
             <option value="해결" ${c.status==='해결'?'selected':''}>해결</option>
           </select>
@@ -825,7 +825,7 @@
       <div style="display:flex; gap:8px; margin-bottom:8px;">
         <input type="date" id="wt-checkin-date-${w.id}" value="${todayStr()}" style="max-width:150px;" />
         <select id="wt-checkin-status-${w.id}" style="max-width:120px;">
-          <option value="진행중" ${defaultStatus==='진행중'?'selected':''}>진행중</option>
+          <option value="진행중" ${defaultStatus==='진행중'?'selected':''}>교정중</option>
           <option value="재발" ${defaultStatus==='재발'?'selected':''}>재발</option>
           <option value="해결" ${defaultStatus==='해결'?'selected':''}>해결</option>
         </select>
@@ -903,14 +903,14 @@
     const solved = ws.filter(w => currentStatus(w) === '해결').sort((a,b)=> lastUpdate(b).localeCompare(lastUpdate(a)));
 
     let html = `<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-      <div class="disp" style="font-size: 17px; font-weight:600;">진행중인 약점 <span class="mono" style="color:var(--ink-faint); font-weight:400; font-size: 15.5px;">(${open.length})</span></div>
+      <div class="disp" style="font-size: 17px; font-weight:600;">교정중인 약점 <span class="mono" style="color:var(--ink-faint); font-weight:400; font-size: 15.5px;">(${open.length})</span></div>
       ${mode==='teacher' ? `<button class="btn-ghost" data-action="toggle-add-weakness">${ui.addWeaknessOpen ? '닫기' : '+ 약점 추가'}</button>` : ''}
     </div>`;
     html += renderAddWeaknessForm();
 
     if (!open.length) {
       html += `<div style="padding:24px; text-align:center; color:var(--ink-faint); font-size: 15.5px; background:#fff; border:1px dashed var(--line); border-radius:12px;">
-        ${mode==='teacher' ? '진행중인 약점이 없어요. 오늘 수업에서 발견한 약점을 추가해보세요.' : '현재 진행중인 약점이 없어요.'}
+        ${mode==='teacher' ? '교정중인 약점이 없어요. 오늘 수업에서 발견한 약점을 추가해보세요.' : '현재 교정중인 약점이 없어요.'}
       </div>`;
     } else {
       html += open.map(renderWeaknessCard).join('');
