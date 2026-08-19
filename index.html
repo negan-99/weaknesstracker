@@ -72,6 +72,43 @@
   #wt-root .btn-text:hover { color: var(--ink); }
   #wt-root .btn-danger-text { color: var(--red); font-size: 12px; padding: 4px 6px; }
   #wt-root .btn-danger-text:hover { color: #7d2822; }
+
+  /* iOS는 입력창 글자 크기가 16px보다 작으면 포커스할 때 화면을 확대해버려요 */
+  #wt-root input, #wt-root textarea, #wt-root select {
+    font-size: 16px;
+  }
+
+  @media (max-width: 640px) {
+    #wt-root {
+      padding: 16px;
+      border-radius: 0;
+    }
+    /* 날짜 입력칸 등 데스크탑 기준 고정폭들을 화면 폭에 맞게 풀어줌 */
+    #wt-root input[type="date"] {
+      max-width: 100% !important;
+      width: 100%;
+    }
+    /* 날짜 입력이 들어있는 가로 배치 행은 좁은 화면에서 자동으로 줄바꿈 */
+    #wt-root div:has(> input[type="date"]) {
+      flex-wrap: wrap;
+      row-gap: 8px;
+    }
+    /* 버튼 탭 영역을 넓혀서 손가락으로 누르기 쉽게 */
+    #wt-root .btn-text, #wt-root .btn-danger-text {
+      padding: 8px 10px;
+      font-size: 13px;
+    }
+    #wt-root .btn-primary, #wt-root .btn-ghost {
+      padding: 11px 16px;
+      font-size: 14px;
+    }
+    #wt-root input, #wt-root textarea, #wt-root select, #wt-root button {
+      min-height: 40px;
+    }
+    #wt-root .disp {
+      word-break: keep-all;
+    }
+  }
 </style>
 
 <div id="wt-root"></div>
@@ -1071,8 +1108,8 @@
     root.innerHTML = `
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; gap:12px; flex-wrap:wrap;">
         ${editingName ? `
-          <div style="display:flex; gap:8px; align-items:center; flex:1; min-width:220px;">
-            <input id="wt-edit-student-name" value="${esc(sd.name)}" style="max-width:240px;" />
+          <div style="display:flex; gap:8px; align-items:center; flex:1; min-width:220px; flex-wrap:wrap;">
+            <input id="wt-edit-student-name" value="${esc(sd.name)}" style="max-width:240px; flex:1; min-width:140px;" />
             <button class="btn-primary" data-action="save-edit-student-name">저장</button>
             <button class="btn-text" data-action="cancel-edit-student-name">취소</button>
           </div>
@@ -1085,7 +1122,7 @@
         </div>
       </div>
       ${(!ui.locked && mode === 'teacher' && !editingName) ? `<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
-        <div style="display:flex; gap:4px; align-items:center;">
+        <div style="display:flex; gap:4px; align-items:center; flex-wrap:wrap;">
           ${confirmingStudentDelete ? `
             <span style="font-size:12px; color:var(--red);">'${esc(sd.name)}' 학생과 모든 기록을 삭제할까요?</span>
             <button class="btn-danger-text" data-action="confirm-delete">삭제</button>
@@ -1098,7 +1135,7 @@
           `}
         </div>
       </div>` : ''}
-      ${(!ui.locked && mode === 'teacher') ? `<div style="display:flex; justify-content:flex-end; gap:12px; margin-bottom:14px; align-items:center;">
+      ${(!ui.locked && mode === 'teacher') ? `<div style="display:flex; justify-content:flex-end; gap:12px; margin-bottom:14px; align-items:center; flex-wrap:wrap;">
         <span class="mono" style="font-size:10.5px; color:var(--ink-faint);">${STORAGE_MODE === 'supabase' ? '저장 위치: Supabase (기기 상관없이 공유됨)' : STORAGE_MODE === 'cloud' ? '저장 위치: 공유 저장소 (링크로 공유 가능)' : '저장 위치: 이 브라우저 (이 기기에만 저장됨)'}</span>
         ${STORAGE_MODE !== 'supabase' && !sbClient && SUPABASE_URL && SUPABASE_URL.indexOf('YOUR_') !== 0 ? `<span class="mono" style="font-size:10.5px; color:var(--red);">Supabase 연결 실패 — 콘솔을 확인해주세요</span>` : ''}
         <button class="btn-text" data-action="export-data">데이터 내보내기</button>
