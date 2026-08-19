@@ -211,6 +211,7 @@
     billingReceiptDraft: null,
     paymentsExpanded: false,
     editingBillingSettings: false,
+    contentTab: 'weaknesses',
     confirmDelete: null,
     solvedExpanded: false,
     progressExpanded: false,
@@ -703,6 +704,41 @@
     </div>`;
   }
 
+  function renderContentTabs(sd){
+    const openWeak = (sd.weaknesses || []).filter(w => currentStatus(w) !== '해결').length;
+    const today = todayStr();
+    const upcomingExams = (sd.exams || []).filter(e => e.date >= today).length;
+    const noteCount = (sd.notes || []).length;
+    const progressCount = (sd.progress || []).length;
+
+    const tabs = [
+      { id: 'weaknesses', label: '약점', count: openWeak },
+      { id: 'exams', label: '시험 일정', count: upcomingExams },
+    ];
+    if (mode === 'teacher') tabs.push({ id: 'notes', label: '특이사항', count: noteCount });
+    tabs.push({ id: 'progress', label: '진도 기록', count: progressCount });
+
+    return `<div style="display:flex; gap:6px; overflow-x:auto; padding-bottom:2px;">
+      ${tabs.map(t => {
+        const active = ui.contentTab === t.id;
+        return `<button data-action="set-content-tab" data-id="${t.id}" style="
+          padding:10px 16px; border-radius:10px; font-size:14.5px; font-weight:600; white-space:nowrap;
+          background:${active ? 'var(--ink)' : '#fff'}; color:${active ? '#fff' : 'var(--ink-soft)'};
+          border:1px solid ${active ? 'var(--ink)' : 'var(--line)'};">${t.label}${t.count ? ` <span class="mono" style="font-weight:600; opacity:0.75;">${t.count}</span>` : ''}</button>`;
+      }).join('')}
+    </div>`;
+  }
+
+  function renderActiveContentSection(sd){
+    let tab = ui.contentTab;
+    if (tab === 'notes' && mode !== 'teacher') tab = 'weaknesses';
+    if (tab === 'weaknesses') return renderWeaknessSection(sd);
+    if (tab === 'exams') return renderExamSection(sd);
+    if (tab === 'notes') return renderNoteSection(sd);
+    if (tab === 'progress') return renderProgressSection(sd);
+    return renderWeaknessSection(sd);
+  }
+
   function renderSummary(sd){
     const { solvedThisMonth, open, stalest } = monthSummary(sd);
     const monthLabel = (new Date().getMonth()+1) + '월';
@@ -1096,24 +1132,17 @@
 
   function renderProgressSection(sd){
     const ps = (sd.progress || []).slice().sort((a,b)=> b.date.localeCompare(a.date));
-    let html = `<button data-action="toggle-progress" style="display:flex; align-items:center; gap:6px; font-size: 15.5px; color:var(--ink-soft); margin-bottom:${ui.progressExpanded ? '12px' : '0'};">
-      <span class="disp" style="font-weight:600; color:var(--ink);">진도 기록</span>
-      <span class="mono" style="color:var(--ink-faint);">(${ps.length})</span>
-      <span style="margin-left:2px;">${ui.progressExpanded ? '▲' : '▼'}</span>
-    </button>`;
-    if (ui.progressExpanded) {
-      if (mode === 'teacher') {
-        html += `<div style="margin-top:10px; margin-bottom:8px;">
-          ${ui.addProgressOpen ? renderAddProgressForm() : `<button class="btn-text" data-action="toggle-add-progress" style="color:var(--pen);">+ 진도 추가</button>`}
-        </div>`;
-      }
-      if (!ps.length) {
-        html += `<div style="padding:14px; font-size: 15px; color:var(--ink-faint);">기록된 진도가 없어요.</div>`;
-      } else {
-        html += `<div style="background:#fff; border:1px solid var(--line); border-radius:10px; overflow:hidden;">
-          ${ps.map((p,i) => renderProgressRow(p, i === ps.length-1)).join('')}
-        </div>`;
-      }
+    let html = `<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+      <div class="disp" style="font-size:16.5px; font-weight:600;">진도 기록 <span class="mono" style="color:var(--ink-faint); font-weight:400; font-size:14.5px;">(${ps.length})</span></div>
+      ${mode === 'teacher' ? `<button class="btn-ghost" data-action="toggle-add-progress">${ui.addProgressOpen ? '닫기' : '+ 진도 추가'}</button>` : ''}
+    </div>`;
+    html += renderAddProgressForm();
+    if (!ps.length) {
+      html += `<div style="padding:24px; text-align:center; color:var(--ink-faint); font-size: 15.5px; background:#fff; border:1px dashed var(--line); border-radius:12px;">기록된 진도가 없어요.</div>`;
+    } else {
+      html += `<div style="background:#fff; border:1px solid var(--line); border-radius:10px; overflow:hidden;">
+        ${ps.map((p,i) => renderProgressRow(p, i === ps.length-1)).join('')}
+      </div>`;
     }
     return html;
   }
@@ -1250,16 +1279,10 @@
       ${renderAddStudentForm()}
       <div style="height:20px;"></div>
       ${renderSummary(sd)}
-      <div style="height:24px;"></div>
-      ${renderWeaknessSection(sd)}
-      <div style="height:20px; border-top:1px solid var(--line); margin-top:4px;"></div>
-      ${renderExamSection(sd)}
-      ${mode === 'teacher' ? `
-        <div style="height:20px; border-top:1px solid var(--line); margin-top:4px;"></div>
-        ${renderNoteSection(sd)}
-      ` : ''}
-      <div style="height:20px; border-top:1px solid var(--line); margin-top:4px;"></div>
-      <div style="margin-top:20px;">${renderProgressSection(sd)}</div>
+      <div style="height:20px;"></div>
+      ${renderContentTabs(sd)}
+      <div style="height:16px;"></div>
+      ${renderActiveContentSection(sd)}
       ${ui.error ? `<div style="margin-top:14px; font-size: 14.5px; color:var(--red);">${esc(ui.error)}</div>` : ''}
       <div style="margin-top:20px; font-size: 13.5px; color:var(--ink-faint);">${ui.locked ? '이 링크는 이 학생의 기록만 불러와요.' : '학부모 링크로 접속한 사람은 해당 학생 데이터만 조회할 수 있어요.'}</div>
       ${lastErrorDetail ? `<div class="mono" style="margin-top:6px; font-size: 13px; color:var(--ink-faint);">last error: ${esc(lastErrorDetail)}</div>` : ''}
@@ -1298,6 +1321,7 @@
     const parent = e.currentTarget.getAttribute('data-parent');
 
     if (action === 'select-student') { await selectStudent(id); return; }
+    if (action === 'set-content-tab') { ui.contentTab = id; render(); return; }
     if (action === 'login') {
       const emailInput = document.getElementById('wt-login-email');
       const passInput = document.getElementById('wt-login-password');
