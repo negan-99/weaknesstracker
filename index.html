@@ -761,8 +761,9 @@
           <div style="font-size: 14.5px; color:var(--ink-soft); margin-top:6px;">현재 교정중인 약점</div>
         </div>
       </div>
-      ${solvedThisMonth.length ? `<div style="margin-top:14px; padding-top:14px; border-top:1px solid var(--line); font-size: 15px; color:var(--ink-soft);">
-        ${solvedThisMonth.map(w => `<span style="display:inline-block; margin:3px 6px 3px 0; padding:3px 10px; background:var(--green-tint); color:var(--green); border-radius:14px; font-size: 14.5px;">${esc(w.title)}</span>`).join('')}
+      ${solvedThisMonth.length ? `<div style="margin-top:14px; padding-top:14px; border-top:1px solid var(--line);">
+        <div class="mono" style="font-size: 13px; color:var(--green); font-weight:700; margin-bottom:8px;">✓ 이번 달 해결된 약점</div>
+        ${solvedThisMonth.map(w => `<span style="display:inline-block; margin:3px 6px 3px 0; padding:3px 10px; background:var(--green-tint); color:var(--green); border-radius:14px; font-size: 14.5px;">✓ ${esc(w.title)}</span>`).join('')}
       </div>` : ''}
       ${warn}
     </div>`;
