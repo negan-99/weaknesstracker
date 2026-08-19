@@ -48,7 +48,7 @@
     border: 1px solid var(--line);
     border-radius: 8px;
     padding: 8px 10px;
-    font-size: 13px;
+    font-size: 15.5px;
     background: #fff;
     color: var(--ink);
     width: 100%;
@@ -62,7 +62,7 @@
     color: #fff;
     padding: 9px 16px;
     border-radius: 8px;
-    font-size: 13px;
+    font-size: 15.5px;
     font-weight: 500;
   }
   #wt-root .btn-primary:hover { background: #234a6c; }
@@ -70,18 +70,18 @@
     color: var(--pen);
     padding: 8px 14px;
     border-radius: 8px;
-    font-size: 13px;
+    font-size: 15.5px;
     border: 1px solid var(--line);
     background: #fff;
   }
   #wt-root .btn-ghost:hover { background: var(--pen-tint); }
   #wt-root .btn-text {
     color: var(--ink-soft);
-    font-size: 12px;
+    font-size: 14.5px;
     padding: 4px 6px;
   }
   #wt-root .btn-text:hover { color: var(--ink); }
-  #wt-root .btn-danger-text { color: var(--red); font-size: 12px; padding: 4px 6px; }
+  #wt-root .btn-danger-text { color: var(--red); font-size: 14.5px; padding: 4px 6px; }
   #wt-root .btn-danger-text:hover { color: #7d2822; }
 
   /* iOS는 입력창 글자 크기가 16px보다 작으면 포커스할 때 화면을 확대해버려요 */
@@ -107,11 +107,11 @@
     /* 버튼 탭 영역을 넓혀서 손가락으로 누르기 쉽게 */
     #wt-root .btn-text, #wt-root .btn-danger-text {
       padding: 8px 10px;
-      font-size: 13px;
+      font-size: 15.5px;
     }
     #wt-root .btn-primary, #wt-root .btn-ghost {
       padding: 11px 16px;
-      font-size: 14px;
+      font-size: 16px;
     }
     #wt-root input, #wt-root textarea, #wt-root select, #wt-root button {
       min-height: 40px;
@@ -544,18 +544,18 @@
     const tabBtn = (s, dim) => {
       const active = s.id === currentStudentId;
       return `<button data-action="select-student" data-id="${s.id}" style="
-        padding:8px 16px; border-radius:20px; font-size:13px; font-weight:500;
+        padding:8px 16px; border-radius:20px; font-size: 15.5px; font-weight:500;
         background:${active ? 'var(--ink)' : '#fff'}; color:${active ? '#fff' : 'var(--ink-soft)'};
         border:1px solid ${active ? 'var(--ink)' : 'var(--line)'}; white-space:nowrap; ${dim ? 'opacity:0.6;' : ''}">${esc(s.name)}</button>`;
     };
     const activeList = index.filter(s => s.active !== false);
     const endedList = index.filter(s => s.active === false);
     const addBtn = mode === 'teacher'
-      ? `<button data-action="toggle-add-student" style="padding:8px 14px; border-radius:20px; font-size:13px; color:var(--pen); border:1px dashed var(--pen-tint); background:#fff; white-space:nowrap;">+ 학생 추가</button>`
+      ? `<button data-action="toggle-add-student" style="padding:8px 14px; border-radius:20px; font-size: 15.5px; color:var(--pen); border:1px dashed var(--pen-tint); background:#fff; white-space:nowrap;">+ 학생 추가</button>`
       : '';
     let html = `<div class="wt-tabs-row" style="display:flex; gap:8px; overflow-x:auto; padding-bottom:4px;">${activeList.map(s => tabBtn(s, false)).join('')}${addBtn}</div>`;
     if (endedList.length) {
-      html += `<button data-action="toggle-ended" style="margin-top:8px; font-size:12px; color:var(--ink-soft); display:flex; align-items:center; gap:6px;">
+      html += `<button data-action="toggle-ended" style="margin-top:8px; font-size: 14.5px; color:var(--ink-soft); display:flex; align-items:center; gap:6px;">
         수업 종료 학생 ${endedList.length}명 ${ui.endedExpanded ? '접기 ▲' : '보기 ▼'}
       </button>`;
       if (ui.endedExpanded) {
@@ -577,9 +577,9 @@
   function renderModeToggle(){
     if (ui.locked) return '';
     return `<div style="display:inline-flex; background:#fff; border:1px solid var(--line); border-radius:20px; padding:3px;">
-      <button data-action="set-mode" data-mode="teacher" style="padding:6px 14px; border-radius:16px; font-size:12px; font-weight:500;
+      <button data-action="set-mode" data-mode="teacher" style="padding:6px 14px; border-radius:16px; font-size: 14.5px; font-weight:500;
         background:${mode==='teacher' ? 'var(--pen)' : 'transparent'}; color:${mode==='teacher' ? '#fff' : 'var(--ink-soft)'};">선생님 보기</button>
-      <button data-action="set-mode" data-mode="parent" style="padding:6px 14px; border-radius:16px; font-size:12px; font-weight:500;
+      <button data-action="set-mode" data-mode="parent" style="padding:6px 14px; border-radius:16px; font-size: 14.5px; font-weight:500;
         background:${mode==='parent' ? 'var(--pen)' : 'transparent'}; color:${mode==='parent' ? '#fff' : 'var(--ink-soft)'};">학부모 보기</button>
     </div>`;
   }
@@ -597,7 +597,7 @@
     const payments = (b.payments || []).slice().sort((x,y)=> y.date.localeCompare(x.date));
 
     const settingsBlock = editing ? `
-      <label style="display:flex; align-items:center; gap:8px; font-size:13px; margin-bottom:10px; cursor:pointer;">
+      <label style="display:flex; align-items:center; gap:8px; font-size: 15.5px; margin-bottom:10px; cursor:pointer;">
         <input type="checkbox" id="wt-billing-receipt" data-action="toggle-receipt-draft" ${showReceiptField ? 'checked' : ''} style="width:auto; min-height:auto;" />
         현금영수증 발행
       </label>
@@ -609,7 +609,7 @@
         ${!isUnset ? `<button class="btn-text" data-action="cancel-billing-settings">취소</button>` : ''}
       </div>
     ` : `
-      <div style="font-size:13px; color:var(--ink-soft); line-height:1.9;">
+      <div style="font-size: 15.5px; color:var(--ink-soft); line-height:1.9;">
         현금영수증 &nbsp;${b.hasReceipt ? `발행 <span class="mono" style="color:var(--ink-faint);">(${esc(b.receiptNumber || '번호 미입력')})</span>` : '미발행'}<br>
         수업료 &nbsp;${b.tuitionFee ? `<span style="color:var(--ink); font-weight:500;">${esc(b.tuitionFee)}원</span>` : '미입력'}<br>
         월 수업 횟수 &nbsp;${b.monthlySessions ? `<span style="color:var(--ink); font-weight:500;">${b.monthlySessions}회</span>` : '미설정'}
@@ -618,16 +618,16 @@
     `;
 
     return `<div style="background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px 18px; margin-bottom:16px;">
-      <div class="disp" style="font-size:15px; font-weight:600; margin-bottom:12px;">수납 관리</div>
+      <div class="disp" style="font-size: 17px; font-weight:600; margin-bottom:12px;">수납 관리</div>
 
       ${settingsBlock}
 
       ${b.monthlySessions > 0 ? `
         <div style="border-top:1px solid var(--paper); margin-top:14px; padding-top:14px;">
-          <div style="font-size:12.5px; color:var(--ink-soft); margin-bottom:8px;">현재 수업 회차</div>
+          <div style="font-size: 15px; color:var(--ink-soft); margin-bottom:8px;">현재 수업 회차</div>
           <div style="display:flex; align-items:center; gap:14px;">
             <button class="btn-ghost" data-action="decrement-session" ${b.currentSession <= 0 ? 'disabled' : ''} style="min-width:44px;">−</button>
-            <div class="disp" style="font-size:22px; font-weight:700; min-width:64px; text-align:center;">${b.currentSession} / ${b.monthlySessions}</div>
+            <div class="disp" style="font-size: 24px; font-weight:700; min-width:64px; text-align:center;">${b.currentSession} / ${b.monthlySessions}</div>
             <button class="btn-ghost" data-action="increment-session" ${needsConfirm ? 'disabled' : ''} style="min-width:44px;">+</button>
           </div>
         </div>
@@ -635,27 +635,27 @@
 
       ${needsConfirm ? `
         <div style="margin-top:14px; padding:12px 14px; background:var(--amber-tint); border-radius:8px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
-          <span style="font-size:13px; color:var(--amber); font-weight:600;">수업료를 받아야 합니다</span>
+          <span style="font-size: 15.5px; color:var(--amber); font-weight:600;">수업료를 받아야 합니다</span>
           <button class="btn-primary" data-action="confirm-fee-due">확인</button>
         </div>
       ` : ''}
 
       ${payments.length ? `
         <div style="margin-top:16px; border-top:1px solid var(--paper); padding-top:12px;">
-          <button data-action="toggle-payments" style="display:flex; align-items:center; gap:6px; font-size:12.5px; color:var(--ink-soft);">
+          <button data-action="toggle-payments" style="display:flex; align-items:center; gap:6px; font-size: 15px; color:var(--ink-soft);">
             수납 기록 <span class="mono" style="color:var(--ink-faint);">(${payments.length})</span> ${ui.paymentsExpanded ? '접기 ▲' : '보기 ▼'}
           </button>
           ${ui.paymentsExpanded ? payments.map(p => {
             const confirmingPayment = ui.confirmDelete && ui.confirmDelete.type === 'payment' && ui.confirmDelete.id === p.id;
             return `
             <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; padding:8px 0; flex-wrap:wrap; border-bottom:1px solid var(--paper);">
-              <input type="date" class="wt-payment-date" data-payment-id="${p.id}" value="${esc(p.date)}" style="max-width:150px; font-size:12px; padding:5px 8px;" />
-              <label style="display:flex; align-items:center; gap:6px; font-size:12.5px; cursor:pointer;">
+              <input type="date" class="wt-payment-date" data-payment-id="${p.id}" value="${esc(p.date)}" style="max-width:150px; font-size: 14.5px; padding:5px 8px;" />
+              <label style="display:flex; align-items:center; gap:6px; font-size: 15px; cursor:pointer;">
                 <input type="checkbox" data-action="toggle-payment-received" data-id="${p.id}" ${p.received ? 'checked' : ''} style="width:auto; min-height:auto;" />
                 수업료 받음
               </label>
               ${confirmingPayment ? `
-                <span style="font-size:11px; color:var(--red);">삭제할까요?</span>
+                <span style="font-size: 13.5px; color:var(--red);">삭제할까요?</span>
                 <button class="btn-danger-text" data-action="confirm-delete">삭제</button>
                 <button class="btn-text" data-action="cancel-delete">취소</button>
               ` : `
@@ -675,8 +675,8 @@
 
     if (!base) {
       return `<div style="margin-top:12px; padding:14px; background:#fff; border:1px solid var(--red-tint); border-radius:10px;">
-        <div style="font-size:12.5px; color:var(--red); font-weight:500; margin-bottom:8px;">이 화면의 실제 주소를 자동으로 알아낼 수 없었어요.</div>
-        <div style="font-size:12px; color:var(--ink-soft); line-height:1.7; margin-bottom:12px;">
+        <div style="font-size: 15px; color:var(--red); font-weight:500; margin-bottom:8px;">이 화면의 실제 주소를 자동으로 알아낼 수 없었어요.</div>
+        <div style="font-size: 14.5px; color:var(--ink-soft); line-height:1.7; margin-bottom:12px;">
           로컬 파일이거나, 아직 게시되지 않은 미리보기 화면일 수 있어요. 게시하지 않으셨다면 먼저 Claude.ai에서 이 아티팩트를 "게시(Publish)"하거나, 무료 정적 호스팅(Netlify Drop 등)에 올려주세요.<br><br>
           이미 게시하셨는데 이 메시지가 뜬다면, 지금 브라우저 주소창에 보이는 진짜 주소를 아래에 직접 붙여넣어 주세요.
         </div>
@@ -689,16 +689,16 @@
 
     const link = buildParentLink(studentId);
     const localWarning = STORAGE_MODE === 'local'
-      ? `<div style="font-size:12px; color:var(--amber); margin-bottom:8px; padding:8px 10px; background:var(--amber-tint); border-radius:6px;">지금은 이 파일이 이 컴퓨터의 브라우저 안에만 저장돼 있어요. 이 링크는 다른 사람 기기에서 열면 기록이 보이지 않아요. 학부모께 실제로 보여드리려면 아래 "데이터 내보내기"로 백업 파일을 만들어 함께 전달해주세요.</div>`
+      ? `<div style="font-size: 14.5px; color:var(--amber); margin-bottom:8px; padding:8px 10px; background:var(--amber-tint); border-radius:6px;">지금은 이 파일이 이 컴퓨터의 브라우저 안에만 저장돼 있어요. 이 링크는 다른 사람 기기에서 열면 기록이 보이지 않아요. 학부모께 실제로 보여드리려면 아래 "데이터 내보내기"로 백업 파일을 만들어 함께 전달해주세요.</div>`
       : '';
     return `<div style="margin-top:12px; padding:14px; background:#fff; border:1px solid var(--line); border-radius:10px;">
       ${localWarning}
-      <div style="font-size:12px; color:var(--ink-soft); margin-bottom:8px;">이 링크를 열면 ${esc(studentName)} 학생 기록만 불러와요. 다른 학생 데이터는 이 링크로는 아예 조회되지 않아요.</div>
+      <div style="font-size: 14.5px; color:var(--ink-soft); margin-bottom:8px;">이 링크를 열면 ${esc(studentName)} 학생 기록만 불러와요. 다른 학생 데이터는 이 링크로는 아예 조회되지 않아요.</div>
       <div style="display:flex; gap:8px;">
         <input id="wt-parent-link" readonly value="${esc(link)}" onclick="this.select()" style="flex:1;" />
         <button class="btn-primary" data-action="copy-link">복사</button>
       </div>
-      <div id="wt-copy-msg" style="font-size:11.5px; color:var(--green); margin-top:6px; min-height:14px;"></div>
+      <div id="wt-copy-msg" style="font-size: 14px; color:var(--green); margin-top:6px; min-height:14px;"></div>
       <button class="btn-text" data-action="clear-manual-base-url" style="margin-top:4px;">이 주소가 틀렸다면 다시 입력하기</button>
     </div>`;
   }
@@ -708,25 +708,25 @@
     const monthLabel = (new Date().getMonth()+1) + '월';
     let warn = '';
     if (stalest && stalest.days >= 14) {
-      warn = `<div style="margin-top:12px; padding:10px 14px; background:var(--amber-tint); border-radius:8px; font-size:12.5px; color:var(--amber); display:flex; gap:8px; align-items:baseline;">
+      warn = `<div style="margin-top:12px; padding:10px 14px; background:var(--amber-tint); border-radius:8px; font-size: 15px; color:var(--amber); display:flex; gap:8px; align-items:baseline;">
         <span class="mono" style="font-weight:600;">주의</span>
         <span>'${esc(stalest.w.title)}' 항목이 ${stalest.days}일째 업데이트 없이 진행중이에요.</span>
       </div>`;
     }
     return `<div style="background:var(--card); border-radius:12px; padding:20px 22px; border:1px solid var(--line);">
-      <div class="disp" style="font-size:13px; color:var(--ink-faint); margin-bottom:14px; letter-spacing:0.02em;">${monthLabel} 요약</div>
+      <div class="disp" style="font-size: 15.5px; color:var(--ink-faint); margin-bottom:14px; letter-spacing:0.02em;">${monthLabel} 요약</div>
       <div style="display:flex; gap:32px; flex-wrap:wrap;">
         <div>
-          <div class="disp" style="font-size:32px; font-weight:700; color:var(--green); line-height:1;">${solvedThisMonth.length}</div>
-          <div style="font-size:12px; color:var(--ink-soft); margin-top:6px;">이번 달 해결한 약점</div>
+          <div class="disp" style="font-size: 34px; font-weight:700; color:var(--green); line-height:1;">${solvedThisMonth.length}</div>
+          <div style="font-size: 14.5px; color:var(--ink-soft); margin-top:6px;">이번 달 해결한 약점</div>
         </div>
         <div>
-          <div class="disp" style="font-size:32px; font-weight:700; color:var(--red); line-height:1;">${open.length}</div>
-          <div style="font-size:12px; color:var(--ink-soft); margin-top:6px;">현재 진행중인 약점</div>
+          <div class="disp" style="font-size: 34px; font-weight:700; color:var(--red); line-height:1;">${open.length}</div>
+          <div style="font-size: 14.5px; color:var(--ink-soft); margin-top:6px;">현재 진행중인 약점</div>
         </div>
       </div>
-      ${solvedThisMonth.length ? `<div style="margin-top:14px; padding-top:14px; border-top:1px solid var(--line); font-size:12.5px; color:var(--ink-soft);">
-        ${solvedThisMonth.map(w => `<span style="display:inline-block; margin:3px 6px 3px 0; padding:3px 10px; background:var(--green-tint); color:var(--green); border-radius:14px; font-size:12px;">${esc(w.title)}</span>`).join('')}
+      ${solvedThisMonth.length ? `<div style="margin-top:14px; padding-top:14px; border-top:1px solid var(--line); font-size: 15px; color:var(--ink-soft);">
+        ${solvedThisMonth.map(w => `<span style="display:inline-block; margin:3px 6px 3px 0; padding:3px 10px; background:var(--green-tint); color:var(--green); border-radius:14px; font-size: 14.5px;">${esc(w.title)}</span>`).join('')}
       </div>` : ''}
       ${warn}
     </div>`;
@@ -758,12 +758,12 @@
     }
 
     return `<div style="display:flex; gap:10px; padding:7px 0; align-items:flex-start; ${borderStyle}">
-      <div class="mono" style="font-size:11.5px; color:var(--ink-faint); min-width:36px; padding-top:2px;">${fmtDate(c.date)}</div>
+      <div class="mono" style="font-size: 14px; color:var(--ink-faint); min-width:36px; padding-top:2px;">${fmtDate(c.date)}</div>
       <div style="flex-shrink:0;">${statusBadge(c.status)}</div>
-      <div style="font-size:12.5px; color:var(--ink-soft); line-height:1.5; flex:1;">${esc(c.note || '')}</div>
+      <div style="font-size: 15px; color:var(--ink-soft); line-height:1.5; flex:1;">${esc(c.note || '')}</div>
       ${editable ? (confirming ? `
         <div style="display:flex; gap:6px; align-items:center; flex-shrink:0;">
-          <span style="font-size:11px; color:var(--red);">삭제할까요?</span>
+          <span style="font-size: 13.5px; color:var(--red);">삭제할까요?</span>
           <button class="btn-danger-text" data-action="confirm-delete">삭제</button>
           <button class="btn-text" data-action="cancel-delete">취소</button>
         </div>
@@ -778,7 +778,7 @@
 
   function renderCheckinTimeline(w){
     const sorted = (w.checkins || []).slice().sort((a,b)=> a.date.localeCompare(b.date));
-    if (!sorted.length) return `<div style="font-size:12px; color:var(--ink-faint); padding:8px 0;">아직 체크인 기록이 없어요.</div>`;
+    if (!sorted.length) return `<div style="font-size: 14.5px; color:var(--ink-faint); padding:8px 0;">아직 체크인 기록이 없어요.</div>`;
     return `<div style="margin-top:10px;">${sorted.map((c,i) => renderCheckinRow(w, c, i === sorted.length-1)).join('')}</div>`;
   }
 
@@ -810,9 +810,9 @@
 
     if (isEditing) {
       return `<div style="background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px 18px; margin-bottom:10px;">
-        <div style="font-size:12.5px; color:var(--ink-soft); margin-bottom:6px;">약점 내용</div>
+        <div style="font-size: 15px; color:var(--ink-soft); margin-bottom:6px;">약점 내용</div>
         <textarea id="wt-edit-weakness-title-${w.id}" rows="2" style="margin-bottom:10px; resize:vertical;">${esc(w.title)}</textarea>
-        <div style="font-size:12.5px; color:var(--ink-soft); margin-bottom:6px;">지도 방향</div>
+        <div style="font-size: 15px; color:var(--ink-soft); margin-bottom:6px;">지도 방향</div>
         <textarea id="wt-edit-weakness-action-${w.id}" rows="2" style="margin-bottom:10px; resize:vertical;">${esc(w.action || '')}</textarea>
         <div style="display:flex; gap:8px;">
           <button class="btn-primary" data-action="save-edit-weakness" data-id="${w.id}">저장</button>
@@ -824,15 +824,15 @@
     return `<div style="background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px 18px; margin-bottom:10px;">
       <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px;">
         <div style="flex:1;">
-          <div style="font-size:14.5px; font-weight:500; line-height:1.5;">${esc(w.title)}</div>
-          ${w.action ? `<div style="font-size:12.5px; color:var(--ink-soft); margin-top:5px; line-height:1.6;">${esc(w.action)}</div>` : ''}
-          <div class="mono" style="font-size:11px; color:var(--ink-faint); margin-top:8px;">최초 기록 ${fmtDate(w.createdAt)} · 최근 업데이트 ${fmtDate(lastUpdate(w))}</div>
+          <div style="font-size: 16.5px; font-weight:500; line-height:1.5;">${esc(w.title)}</div>
+          ${w.action ? `<div style="font-size: 15px; color:var(--ink-soft); margin-top:5px; line-height:1.6;">${esc(w.action)}</div>` : ''}
+          <div class="mono" style="font-size: 13.5px; color:var(--ink-faint); margin-top:8px;">최초 기록 ${fmtDate(w.createdAt)} · 최근 업데이트 ${fmtDate(lastUpdate(w))}</div>
         </div>
         <div>${statusBadge(status, 'lg')}</div>
       </div>
       ${editable ? `<div style="margin-top:10px;">
         ${isConfirming ? `
-          <span style="font-size:12px; color:var(--red); margin-right:8px;">삭제할까요? 체크인 기록도 함께 삭제돼요.</span>
+          <span style="font-size: 14.5px; color:var(--red); margin-right:8px;">삭제할까요? 체크인 기록도 함께 삭제돼요.</span>
           <button class="btn-danger-text" data-action="confirm-delete">삭제</button>
           <button class="btn-text" data-action="cancel-delete">취소</button>
         ` : `
@@ -850,9 +850,9 @@
   function renderAddWeaknessForm(){
     if (!ui.addWeaknessOpen) return '';
     return `<div style="background:#fff; border:1px solid var(--line); border-radius:12px; padding:16px 18px; margin-bottom:14px;">
-      <div style="font-size:12.5px; color:var(--ink-soft); margin-bottom:6px;">약점 내용</div>
+      <div style="font-size: 15px; color:var(--ink-soft); margin-bottom:6px;">약점 내용</div>
       <textarea id="wt-new-weakness-title" rows="2" placeholder="예: 이차식의 값 범위를 함숫값 변화로 관찰하지 못함" style="margin-bottom:10px; resize:vertical;"></textarea>
-      <div style="font-size:12.5px; color:var(--ink-soft); margin-bottom:6px;">지도 방향 (선택)</div>
+      <div style="font-size: 15px; color:var(--ink-soft); margin-bottom:6px;">지도 방향 (선택)</div>
       <textarea id="wt-new-weakness-action" rows="2" placeholder="예: x의 변화에 따른 함숫값 변화로 관찰하도록 지도" style="margin-bottom:10px; resize:vertical;"></textarea>
       <div style="display:flex; gap:8px;">
         <button class="btn-primary" data-action="add-weakness">저장</button>
@@ -867,13 +867,13 @@
     const solved = ws.filter(w => currentStatus(w) === '해결').sort((a,b)=> lastUpdate(b).localeCompare(lastUpdate(a)));
 
     let html = `<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-      <div class="disp" style="font-size:15px; font-weight:600;">진행중인 약점 <span class="mono" style="color:var(--ink-faint); font-weight:400; font-size:13px;">(${open.length})</span></div>
+      <div class="disp" style="font-size: 17px; font-weight:600;">진행중인 약점 <span class="mono" style="color:var(--ink-faint); font-weight:400; font-size: 15.5px;">(${open.length})</span></div>
       ${mode==='teacher' ? `<button class="btn-ghost" data-action="toggle-add-weakness">${ui.addWeaknessOpen ? '닫기' : '+ 약점 추가'}</button>` : ''}
     </div>`;
     html += renderAddWeaknessForm();
 
     if (!open.length) {
-      html += `<div style="padding:24px; text-align:center; color:var(--ink-faint); font-size:13px; background:#fff; border:1px dashed var(--line); border-radius:12px;">
+      html += `<div style="padding:24px; text-align:center; color:var(--ink-faint); font-size: 15.5px; background:#fff; border:1px dashed var(--line); border-radius:12px;">
         ${mode==='teacher' ? '진행중인 약점이 없어요. 오늘 수업에서 발견한 약점을 추가해보세요.' : '현재 진행중인 약점이 없어요.'}
       </div>`;
     } else {
@@ -881,7 +881,7 @@
     }
 
     if (solved.length) {
-      html += `<button data-action="toggle-solved" style="margin-top:14px; font-size:12.5px; color:var(--ink-soft); display:flex; align-items:center; gap:6px;">
+      html += `<button data-action="toggle-solved" style="margin-top:14px; font-size: 15px; color:var(--ink-soft); display:flex; align-items:center; gap:6px;">
         해결된 약점 ${solved.length}개 ${ui.solvedExpanded ? '접기 ▲' : '보기 ▼'}
       </button>`;
       if (ui.solvedExpanded) {
@@ -918,11 +918,11 @@
           <input id="wt-edit-exam-title-${e.id}" value="${esc(e.title)}" style="flex:1;" />
           <input type="date" id="wt-edit-exam-date-${e.id}" value="${esc(e.date)}" style="max-width:150px;" />
         </div>
-        <div style="font-size:12.5px; color:var(--ink-soft); margin-bottom:6px;">범위</div>
+        <div style="font-size: 15px; color:var(--ink-soft); margin-bottom:6px;">범위</div>
         <textarea id="wt-edit-exam-scope-${e.id}" rows="2" style="margin-bottom:10px; resize:vertical;">${esc(e.scope || '')}</textarea>
-        <div style="font-size:12.5px; color:var(--ink-soft); margin-bottom:6px;">결과 (점수, 등수 등)</div>
+        <div style="font-size: 15px; color:var(--ink-soft); margin-bottom:6px;">결과 (점수, 등수 등)</div>
         <input id="wt-edit-exam-result-${e.id}" value="${esc(e.result || '')}" style="margin-bottom:10px;" />
-        <div style="font-size:12.5px; color:var(--ink-soft); margin-bottom:6px;">피드백</div>
+        <div style="font-size: 15px; color:var(--ink-soft); margin-bottom:6px;">피드백</div>
         <textarea id="wt-edit-exam-feedback-${e.id}" rows="2" style="margin-bottom:10px; resize:vertical;">${esc(e.feedback || '')}</textarea>
         <div style="display:flex; gap:8px;">
           <button class="btn-primary" data-action="save-edit-exam" data-id="${e.id}">저장</button>
@@ -934,17 +934,17 @@
     return `<div style="background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px 18px; margin-bottom:10px;">
       <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px;">
         <div style="flex:1;">
-          <div style="font-size:14.5px; font-weight:500;">${esc(e.title)}</div>
-          <div class="mono" style="font-size:11px; color:var(--ink-faint); margin-top:6px;">${esc(e.date)}</div>
-          ${e.scope ? `<div style="font-size:12.5px; color:var(--ink-soft); margin-top:8px; line-height:1.6;">${esc(e.scope)}</div>` : ''}
-          ${e.result ? `<div style="font-size:12.5px; color:var(--ink); margin-top:8px;"><span style="color:var(--ink-faint);">결과 </span>${esc(e.result)}</div>` : ''}
-          ${e.feedback ? `<div style="font-size:12.5px; color:var(--ink-soft); margin-top:4px; line-height:1.6;">${esc(e.feedback)}</div>` : ''}
+          <div style="font-size: 16.5px; font-weight:500;">${esc(e.title)}</div>
+          <div class="mono" style="font-size: 13.5px; color:var(--ink-faint); margin-top:6px;">${esc(e.date)}</div>
+          ${e.scope ? `<div style="font-size: 15px; color:var(--ink-soft); margin-top:8px; line-height:1.6;">${esc(e.scope)}</div>` : ''}
+          ${e.result ? `<div style="font-size: 15px; color:var(--ink); margin-top:8px;"><span style="color:var(--ink-faint);">결과 </span>${esc(e.result)}</div>` : ''}
+          ${e.feedback ? `<div style="font-size: 15px; color:var(--ink-soft); margin-top:4px; line-height:1.6;">${esc(e.feedback)}</div>` : ''}
         </div>
         <div>${status === '예정' ? statusBadge(status, 'lg', examDday(e)) : statusBadge(status, 'lg')}</div>
       </div>
       ${editable ? `<div style="margin-top:10px;">
         ${confirming ? `
-          <span style="font-size:12px; color:var(--red); margin-right:8px;">삭제할까요?</span>
+          <span style="font-size: 14.5px; color:var(--red); margin-right:8px;">삭제할까요?</span>
           <button class="btn-danger-text" data-action="confirm-delete">삭제</button>
           <button class="btn-text" data-action="cancel-delete">취소</button>
         ` : `
@@ -962,13 +962,13 @@
     const past = exams.filter(e => e.date < today).sort((a,b)=> b.date.localeCompare(a.date));
 
     let html = `<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-      <div class="disp" style="font-size:15px; font-weight:600;">시험 일정 <span class="mono" style="color:var(--ink-faint); font-weight:400; font-size:13px;">(${upcoming.length})</span></div>
+      <div class="disp" style="font-size: 17px; font-weight:600;">시험 일정 <span class="mono" style="color:var(--ink-faint); font-weight:400; font-size: 15.5px;">(${upcoming.length})</span></div>
       ${mode==='teacher' ? `<button class="btn-ghost" data-action="toggle-add-exam">${ui.addExamOpen ? '닫기' : '+ 시험 추가'}</button>` : ''}
     </div>`;
     html += renderAddExamForm();
 
     if (!upcoming.length) {
-      html += `<div style="padding:24px; text-align:center; color:var(--ink-faint); font-size:13px; background:#fff; border:1px dashed var(--line); border-radius:12px;">
+      html += `<div style="padding:24px; text-align:center; color:var(--ink-faint); font-size: 15.5px; background:#fff; border:1px dashed var(--line); border-radius:12px;">
         ${mode==='teacher' ? '예정된 시험이 없어요.' : '예정된 시험이 없어요.'}
       </div>`;
     } else {
@@ -976,7 +976,7 @@
     }
 
     if (past.length) {
-      html += `<button data-action="toggle-past-exams" style="margin-top:14px; font-size:12.5px; color:var(--ink-soft); display:flex; align-items:center; gap:6px;">
+      html += `<button data-action="toggle-past-exams" style="margin-top:14px; font-size: 15px; color:var(--ink-soft); display:flex; align-items:center; gap:6px;">
         지난 시험 ${past.length}개 ${ui.pastExamsExpanded ? '접기 ▲' : '보기 ▼'}
       </button>`;
       if (ui.pastExamsExpanded) {
@@ -1014,11 +1014,11 @@
     }
 
     return `<div style="background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px 18px; margin-bottom:10px;">
-      <div class="mono" style="font-size:11px; color:var(--ink-faint); margin-bottom:8px;">${fmtDate(n.date)}</div>
-      <div style="font-size:13px; color:var(--ink); line-height:1.7; white-space:pre-wrap;">${esc(n.content)}</div>
+      <div class="mono" style="font-size: 13.5px; color:var(--ink-faint); margin-bottom:8px;">${fmtDate(n.date)}</div>
+      <div style="font-size: 15.5px; color:var(--ink); line-height:1.7; white-space:pre-wrap;">${esc(n.content)}</div>
       <div style="margin-top:10px;">
         ${confirming ? `
-          <span style="font-size:12px; color:var(--red); margin-right:8px;">삭제할까요?</span>
+          <span style="font-size: 14.5px; color:var(--red); margin-right:8px;">삭제할까요?</span>
           <button class="btn-danger-text" data-action="confirm-delete">삭제</button>
           <button class="btn-text" data-action="cancel-delete">취소</button>
         ` : `
@@ -1032,14 +1032,14 @@
   function renderNoteSection(sd){
     const notes = (sd.notes || []).slice().sort((x,y)=> y.date.localeCompare(x.date));
     let html = `<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-      <div class="disp" style="font-size:15px; font-weight:600;">학생 특이사항 기록 <span class="mono" style="color:var(--ink-faint); font-weight:400; font-size:13px;">(${notes.length})</span></div>
+      <div class="disp" style="font-size: 17px; font-weight:600;">학생 특이사항 기록 <span class="mono" style="color:var(--ink-faint); font-weight:400; font-size: 15.5px;">(${notes.length})</span></div>
       <button class="btn-ghost" data-action="toggle-add-note">${ui.addNoteOpen ? '닫기' : '+ 특이사항 추가'}</button>
     </div>
-    <div style="font-size:11.5px; color:var(--ink-faint); margin-bottom:12px;">이 기록은 학부모 보기에는 절대 표시되지 않아요.</div>`;
+    <div style="font-size: 14px; color:var(--ink-faint); margin-bottom:12px;">이 기록은 학부모 보기에는 절대 표시되지 않아요.</div>`;
     html += renderAddNoteForm();
 
     if (!notes.length) {
-      html += `<div style="padding:24px; text-align:center; color:var(--ink-faint); font-size:13px; background:#fff; border:1px dashed var(--line); border-radius:12px;">
+      html += `<div style="padding:24px; text-align:center; color:var(--ink-faint); font-size: 15.5px; background:#fff; border:1px dashed var(--line); border-radius:12px;">
         기록된 특이사항이 없어요.
       </div>`;
     } else {
@@ -1077,11 +1077,11 @@
     }
 
     return `<div style="display:flex; gap:14px; padding:9px 14px; align-items:center; ${borderStyle}">
-      <div class="mono" style="font-size:11.5px; color:var(--ink-faint); min-width:34px;">${fmtDate(p.date)}</div>
-      <div style="font-size:12.5px; color:var(--ink-soft); flex:1;">${esc(p.content)}</div>
+      <div class="mono" style="font-size: 14px; color:var(--ink-faint); min-width:34px;">${fmtDate(p.date)}</div>
+      <div style="font-size: 15px; color:var(--ink-soft); flex:1;">${esc(p.content)}</div>
       ${mode === 'teacher' ? (confirming ? `
         <div style="display:flex; gap:6px; align-items:center;">
-          <span style="font-size:11px; color:var(--red);">삭제할까요?</span>
+          <span style="font-size: 13.5px; color:var(--red);">삭제할까요?</span>
           <button class="btn-danger-text" data-action="confirm-delete">삭제</button>
           <button class="btn-text" data-action="cancel-delete">취소</button>
         </div>
@@ -1096,7 +1096,7 @@
 
   function renderProgressSection(sd){
     const ps = (sd.progress || []).slice().sort((a,b)=> b.date.localeCompare(a.date));
-    let html = `<button data-action="toggle-progress" style="display:flex; align-items:center; gap:6px; font-size:13px; color:var(--ink-soft); margin-bottom:${ui.progressExpanded ? '12px' : '0'};">
+    let html = `<button data-action="toggle-progress" style="display:flex; align-items:center; gap:6px; font-size: 15.5px; color:var(--ink-soft); margin-bottom:${ui.progressExpanded ? '12px' : '0'};">
       <span class="disp" style="font-weight:600; color:var(--ink);">진도 기록</span>
       <span class="mono" style="color:var(--ink-faint);">(${ps.length})</span>
       <span style="margin-left:2px;">${ui.progressExpanded ? '▲' : '▼'}</span>
@@ -1108,7 +1108,7 @@
         </div>`;
       }
       if (!ps.length) {
-        html += `<div style="padding:14px; font-size:12.5px; color:var(--ink-faint);">기록된 진도가 없어요.</div>`;
+        html += `<div style="padding:14px; font-size: 15px; color:var(--ink-faint);">기록된 진도가 없어요.</div>`;
       } else {
         html += `<div style="background:#fff; border:1px solid var(--line); border-radius:10px; overflow:hidden;">
           ${ps.map((p,i) => renderProgressRow(p, i === ps.length-1)).join('')}
@@ -1120,15 +1120,15 @@
 
   function render(){
     if (!ui.loaded) {
-      root.innerHTML = `<div style="padding:40px; text-align:center; color:var(--ink-faint); font-size:13px;">불러오는 중...</div>`;
+      root.innerHTML = `<div style="padding:40px; text-align:center; color:var(--ink-faint); font-size: 15.5px;">불러오는 중...</div>`;
       return;
     }
 
     if (ui.noStorageApi) {
       root.innerHTML = `
         <div style="padding:32px 24px; text-align:center; background:#fff; border:1px solid var(--red-tint); border-radius:12px;">
-          <div style="font-size:14px; color:var(--red); margin-bottom:10px; font-weight:500;">이 브라우저에서는 저장 기능을 쓸 수 없어요.</div>
-          <div style="font-size:12.5px; color:var(--ink-soft); line-height:1.7;">브라우저의 저장 기능이 꺼져 있거나(예: 시크릿 모드 일부 설정) 지원되지 않는 환경이에요.<br>일반 브라우저 창에서 이 파일을 다시 열어봐 주세요.</div>
+          <div style="font-size: 16px; color:var(--red); margin-bottom:10px; font-weight:500;">이 브라우저에서는 저장 기능을 쓸 수 없어요.</div>
+          <div style="font-size: 15px; color:var(--ink-soft); line-height:1.7;">브라우저의 저장 기능이 꺼져 있거나(예: 시크릿 모드 일부 설정) 지원되지 않는 환경이에요.<br>일반 브라우저 창에서 이 파일을 다시 열어봐 주세요.</div>
         </div>
       `;
       return;
@@ -1137,13 +1137,13 @@
     if (!ui.locked && STORAGE_MODE === 'supabase' && !authed) {
       root.innerHTML = `
         <div style="max-width:340px; margin:40px auto; padding:28px; background:#fff; border:1px solid var(--line); border-radius:12px;">
-          <div class="disp" style="font-size:17px; font-weight:700; margin-bottom:4px;">선생님 로그인</div>
-          <div style="font-size:12.5px; color:var(--ink-soft); margin-bottom:18px;">학생 기록을 관리하려면 로그인해주세요.</div>
+          <div class="disp" style="font-size: 19px; font-weight:700; margin-bottom:4px;">선생님 로그인</div>
+          <div style="font-size: 15px; color:var(--ink-soft); margin-bottom:18px;">학생 기록을 관리하려면 로그인해주세요.</div>
           <div style="margin-bottom:10px;">
             <input id="wt-login-email" type="email" placeholder="이메일" value="${esc(ui.authEmail)}" style="margin-bottom:8px;" />
             <input id="wt-login-password" type="password" placeholder="비밀번호" />
           </div>
-          ${ui.authError ? `<div style="font-size:12px; color:var(--red); margin-bottom:10px;">${esc(ui.authError)}</div>` : ''}
+          ${ui.authError ? `<div style="font-size: 14.5px; color:var(--red); margin-bottom:10px;">${esc(ui.authError)}</div>` : ''}
           <button class="btn-primary" data-action="login" style="width:100%;">로그인</button>
         </div>
       `;
@@ -1155,8 +1155,8 @@
       if (!studentData) {
         root.innerHTML = `
           <div style="padding:48px 24px; text-align:center; background:#fff; border:1px dashed var(--line); border-radius:12px;">
-            <div style="font-size:14px; color:var(--ink-soft); margin-bottom:14px;">기록을 불러오지 못했어요. 링크가 잘못됐거나 일시적인 문제일 수 있어요.</div>
-            ${lastErrorDetail ? `<div class="mono" style="font-size:11px; color:var(--ink-faint); margin-bottom:14px;">${esc(lastErrorDetail)}</div>` : ''}
+            <div style="font-size: 16px; color:var(--ink-soft); margin-bottom:14px;">기록을 불러오지 못했어요. 링크가 잘못됐거나 일시적인 문제일 수 있어요.</div>
+            ${lastErrorDetail ? `<div class="mono" style="font-size: 13.5px; color:var(--ink-faint); margin-bottom:14px;">${esc(lastErrorDetail)}</div>` : ''}
             <button class="btn-primary" data-action="retry-load">다시 시도</button>
           </div>
         `;
@@ -1167,15 +1167,15 @@
       if (!index.length) {
         root.innerHTML = `
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-            <div class="disp" style="font-size:20px; font-weight:700;">약점 추적</div>
+            <div class="disp" style="font-size: 22px; font-weight:700;">약점 추적</div>
             ${renderModeToggle()}
           </div>
           <div style="padding:48px 24px; text-align:center; background:#fff; border:1px dashed var(--line); border-radius:12px;">
-            <div style="font-size:14px; color:var(--ink-soft); margin-bottom:16px;">아직 등록된 학생이 없어요.</div>
+            <div style="font-size: 16px; color:var(--ink-soft); margin-bottom:16px;">아직 등록된 학생이 없어요.</div>
             ${mode === 'teacher' ? `
               <button class="btn-primary" data-action="toggle-add-student" style="display:inline-block;">학생 추가</button>
               ${renderAddStudentForm()}
-            ` : `<div style="font-size:13px; color:var(--ink-faint);">선생님이 아직 기록을 시작하지 않았어요.</div>`}
+            ` : `<div style="font-size: 15.5px; color:var(--ink-faint);">선생님이 아직 기록을 시작하지 않았어요.</div>`}
           </div>
         `;
         attachEvents();
@@ -1184,13 +1184,13 @@
       if (ui.loadFailed) {
         root.innerHTML = `
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-            <div class="disp" style="font-size:20px; font-weight:700;">약점 추적</div>
+            <div class="disp" style="font-size: 22px; font-weight:700;">약점 추적</div>
             ${renderModeToggle()}
           </div>
           ${renderStudentTabs()}
           <div style="margin-top:16px; padding:32px 24px; text-align:center; background:#fff; border:1px solid var(--red-tint); border-radius:12px;">
-            <div style="font-size:14px; color:var(--red); margin-bottom:14px;">이 학생 데이터를 불러오지 못했어요. 기존 기록이 지워진 건 아니에요 — 불러오기가 성공하기 전까지는 아무것도 저장되지 않아요.</div>
-            ${lastErrorDetail ? `<div class="mono" style="font-size:11px; color:var(--ink-faint); margin-bottom:14px;">${esc(lastErrorDetail)}</div>` : ''}
+            <div style="font-size: 16px; color:var(--red); margin-bottom:14px;">이 학생 데이터를 불러오지 못했어요. 기존 기록이 지워진 건 아니에요 — 불러오기가 성공하기 전까지는 아무것도 저장되지 않아요.</div>
+            ${lastErrorDetail ? `<div class="mono" style="font-size: 13.5px; color:var(--ink-faint); margin-bottom:14px;">${esc(lastErrorDetail)}</div>` : ''}
             <button class="btn-primary" data-action="retry-load">다시 시도</button>
           </div>
         `;
@@ -1198,7 +1198,7 @@
         return;
       }
       if (!studentData) {
-        root.innerHTML = `<div style="padding:40px; text-align:center; color:var(--ink-faint); font-size:13px;">불러오는 중...</div>`;
+        root.innerHTML = `<div style="padding:40px; text-align:center; color:var(--ink-faint); font-size: 15.5px;">불러오는 중...</div>`;
         return;
       }
     }
@@ -1216,7 +1216,7 @@
             <button class="btn-text" data-action="cancel-edit-student-name">취소</button>
           </div>
         ` : `
-          <div class="disp" style="font-size:20px; font-weight:700;">${esc(sd.name)}<span style="font-size:13px; font-weight:400; color:var(--ink-faint); margin-left:8px;">약점 추적</span></div>
+          <div class="disp" style="font-size: 22px; font-weight:700;">${esc(sd.name)}<span style="font-size: 15.5px; font-weight:400; color:var(--ink-faint); margin-left:8px;">약점 추적</span></div>
         `}
         <div style="display:flex; gap:8px; align-items:center;">
           ${(!ui.locked && STORAGE_MODE === 'supabase') ? `<button class="btn-text" data-action="logout">로그아웃</button>` : ''}
@@ -1227,7 +1227,7 @@
       ${(!ui.locked && mode === 'teacher' && !editingName) ? `<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
         <div style="display:flex; gap:4px; align-items:center; flex-wrap:wrap;">
           ${confirmingStudentDelete ? `
-            <span style="font-size:12px; color:var(--red);">'${esc(sd.name)}' 학생과 모든 기록을 삭제할까요?</span>
+            <span style="font-size: 14.5px; color:var(--red);">'${esc(sd.name)}' 학생과 모든 기록을 삭제할까요?</span>
             <button class="btn-danger-text" data-action="confirm-delete">삭제</button>
             <button class="btn-text" data-action="cancel-delete">취소</button>
           ` : `
@@ -1239,8 +1239,8 @@
         </div>
       </div>` : ''}
       ${(!ui.locked && mode === 'teacher') ? `<div style="display:flex; justify-content:flex-end; gap:12px; margin-bottom:14px; align-items:center; flex-wrap:wrap;">
-        <span class="mono" style="font-size:10.5px; color:var(--ink-faint);">${STORAGE_MODE === 'supabase' ? '저장 위치: Supabase (기기 상관없이 공유됨)' : STORAGE_MODE === 'cloud' ? '저장 위치: 공유 저장소 (링크로 공유 가능)' : '저장 위치: 이 브라우저 (이 기기에만 저장됨)'}</span>
-        ${STORAGE_MODE !== 'supabase' && !sbClient && SUPABASE_URL && SUPABASE_URL.indexOf('YOUR_') !== 0 ? `<span class="mono" style="font-size:10.5px; color:var(--red);">Supabase 연결 실패 — 콘솔을 확인해주세요</span>` : ''}
+        <span class="mono" style="font-size: 13px; color:var(--ink-faint);">${STORAGE_MODE === 'supabase' ? '저장 위치: Supabase (기기 상관없이 공유됨)' : STORAGE_MODE === 'cloud' ? '저장 위치: 공유 저장소 (링크로 공유 가능)' : '저장 위치: 이 브라우저 (이 기기에만 저장됨)'}</span>
+        ${STORAGE_MODE !== 'supabase' && !sbClient && SUPABASE_URL && SUPABASE_URL.indexOf('YOUR_') !== 0 ? `<span class="mono" style="font-size: 13px; color:var(--red);">Supabase 연결 실패 — 콘솔을 확인해주세요</span>` : ''}
         <button class="btn-text" data-action="export-data">데이터 내보내기</button>
         <button class="btn-text" data-action="trigger-import">가져오기</button>
         <input type="file" id="wt-import-file" accept="application/json" style="display:none;" />
@@ -1260,9 +1260,9 @@
       ` : ''}
       <div style="height:20px; border-top:1px solid var(--line); margin-top:4px;"></div>
       <div style="margin-top:20px;">${renderProgressSection(sd)}</div>
-      ${ui.error ? `<div style="margin-top:14px; font-size:12px; color:var(--red);">${esc(ui.error)}</div>` : ''}
-      <div style="margin-top:20px; font-size:11px; color:var(--ink-faint);">${ui.locked ? '이 링크는 이 학생의 기록만 불러와요.' : '학부모 링크로 접속한 사람은 해당 학생 데이터만 조회할 수 있어요.'}</div>
-      ${lastErrorDetail ? `<div class="mono" style="margin-top:6px; font-size:10.5px; color:var(--ink-faint);">last error: ${esc(lastErrorDetail)}</div>` : ''}
+      ${ui.error ? `<div style="margin-top:14px; font-size: 14.5px; color:var(--red);">${esc(ui.error)}</div>` : ''}
+      <div style="margin-top:20px; font-size: 13.5px; color:var(--ink-faint);">${ui.locked ? '이 링크는 이 학생의 기록만 불러와요.' : '학부모 링크로 접속한 사람은 해당 학생 데이터만 조회할 수 있어요.'}</div>
+      ${lastErrorDetail ? `<div class="mono" style="margin-top:6px; font-size: 13px; color:var(--ink-faint);">last error: ${esc(lastErrorDetail)}</div>` : ''}
     `;
     attachEvents();
   }
