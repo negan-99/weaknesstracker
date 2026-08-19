@@ -1,6 +1,17 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>과외 학생 관리</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Noto+Sans+KR:wght@400;500;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: #EDF0F2;
+  }
   #wt-root {
     --paper: #EDF0F2;
     --card: #FFFFFF;
@@ -19,9 +30,9 @@
     font-family: 'Noto Sans KR', sans-serif;
     color: var(--ink);
     background: var(--paper);
-    border-radius: 16px;
-    padding: 28px;
+    padding: 20px 16px 40px;
     box-sizing: border-box;
+    min-height: 100vh;
   }
   #wt-root * { box-sizing: border-box; }
   #wt-root .disp { font-family: 'Space Grotesk', 'Noto Sans KR', sans-serif; }
@@ -110,6 +121,8 @@
     }
   }
 </style>
+</head>
+<body>
 
 <div id="wt-root"></div>
 
@@ -1717,3 +1730,6 @@
   load();
 })();
 </script>
+
+</body>
+</html>
