@@ -239,8 +239,11 @@
   }
   async function rawDelete(key){
     if (STORAGE_MODE === 'supabase') {
-      const { error } = await sbClient.from(SUPABASE_TABLE).delete().eq('key', key);
+      const { data, error } = await sbClient.from(SUPABASE_TABLE).delete().eq('key', key).select();
       if (error) throw error;
+      if (!data || data.length === 0) {
+        throw new Error('삭제 정책(RLS)이 없어서 실제로는 지워지지 않았을 수 있어요');
+      }
       return true;
     }
     if (STORAGE_MODE === 'cloud') {
@@ -1000,8 +1003,13 @@
         const deletedId = cd.id;
         index = index.filter(s => s.id !== deletedId);
         await saveIndex();
-        try { await rawDelete(studentKey(deletedId)); } catch(e) {}
+        let deleteFailed = false;
+        try { await rawDelete(studentKey(deletedId)); }
+        catch(e) { deleteFailed = true; lastErrorDetail = describeError(e); }
         ui.confirmDelete = null;
+        ui.error = deleteFailed
+          ? '학생 목록에서는 지웠지만, 실제 데이터 삭제에는 실패했을 수 있어요. Supabase에 delete 정책이 있는지 확인해주세요.'
+          : null;
         if (index.length) {
           const preferred = index.find(s => s.active !== false) || index[0];
           await selectStudent(preferred.id);
