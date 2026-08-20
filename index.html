@@ -176,6 +176,12 @@
   let sbLastRawError = null;
 
   async function sbGet(key){
+    if (!authed && key.indexOf('wt-student-v2-') === 0) {
+      const { data, error } = await sbClient.rpc('get_shared_record', { lookup_key: key });
+      if (error) { sbLastRawError = error; throw error; }
+      if (data === null || data === undefined) { throw new Error('not found'); }
+      return { key, value: data };
+    }
     const { data, error } = await sbClient.from(SUPABASE_TABLE).select('value').eq('key', key).maybeSingle();
     if (error) { sbLastRawError = error; throw error; }
     if (!data) { throw new Error('not found'); }
@@ -367,6 +373,7 @@
     if (currentStudentId !== id) return;
     if (sd) {
       studentData = sd;
+      if (sd.name) document.title = sd.name + ' - 약점 추적';
     } else {
       ui.loadFailed = true;
     }
@@ -413,6 +420,9 @@
       mode = 'parent';
       currentStudentId = hashStudent;
       studentData = await loadStudentData(hashStudent);
+      if (studentData && studentData.name) {
+        document.title = studentData.name + ' - 약점 추적';
+      }
       ui.loaded = true;
       render();
       return;
@@ -428,7 +438,7 @@
       const preferred = index.find(s => s.active !== false) || index[0];
       currentStudentId = preferred.id;
       const sd = await loadStudentData(currentStudentId);
-      if (sd) { studentData = sd; } else { ui.loadFailed = true; }
+      if (sd) { studentData = sd; if (sd.name) document.title = sd.name + ' - 약점 추적'; } else { ui.loadFailed = true; }
     }
     ui.loaded = true;
     render();
@@ -1234,6 +1244,7 @@
     }
 
     const sd = studentData;
+    document.title = sd.name ? `${sd.name} · 약점 추적` : '과외 학생 관리';
     const editingName = !ui.locked && mode === 'teacher' && ui.editingStudentName;
     const confirmingStudentDelete = ui.confirmDelete && ui.confirmDelete.type === 'student' && ui.confirmDelete.id === currentStudentId;
 
@@ -1355,6 +1366,7 @@
     if (action === 'retry-load') {
       if (ui.locked) {
         studentData = await loadStudentData(currentStudentId);
+        if (studentData && studentData.name) document.title = studentData.name + ' - 약점 추적';
         render();
       } else {
         await selectStudent(currentStudentId);
